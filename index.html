@@ -977,58 +977,13 @@ function exportData() {
    ===================================================================== */
 var MIN_NIGHTS = 7;
 var WINDOW = 7;                        // nights per analysis — one week, matching the journal
-var API_URL = '/v1/messages';          // same-origin proxy; the key is handled server-side
-var MODEL = 'claude-sonnet-4-6';
+var API_URL = '/api/insights';         // our own serverless function, not Anthropic directly
 
-/* The schema is enforced by the API via output_config.format, so the model
-   cannot answer with prose, markdown fences, or extra keys. That is a much
-   stronger guarantee than asking for JSON in the prompt and hoping. */
-var INSIGHT_SCHEMA = {
-  type: 'object',
-  properties: {
-    patterns: {
-      type: 'array',
-      maxItems: 3,
-      items: {
-        type: 'object',
-        properties: {
-          claim: { type: 'string' },
-          evidence: { type: 'string' },
-          confidence: { type: 'string', enum: ['high', 'medium', 'low'] }
-        },
-        required: ['claim', 'evidence', 'confidence'],
-        additionalProperties: false
-      }
-    },
-    insufficientData: { type: 'boolean' },
-    note: { type: 'string' }
-  },
-  required: ['patterns', 'insufficientData', 'note'],
-  additionalProperties: false
-};
-
-/* Anti-agreeableness is the whole game here. A model asked to "find patterns"
-   will find them in noise, because finding something feels more helpful than
-   finding nothing. Vague instructions ("be careful", "don't overstate") barely
-   move it. Numeric thresholds do: they replace a judgment call the model wants
-   to resolve in your favour with an arithmetic test it can actually fail. */
-var SYSTEM_PROMPT = [
-  'You analyse a personal sleep journal. Each record pairs what someone did during one evening with how they slept that night.',
-  '',
-  'Your job is to report only what the data supports, and to say plainly when it supports nothing.',
-  '',
-  'Hard rules:',
-  '1. A pattern requires at least 3 nights WITH the behaviour and at least 3 nights WITHOUT it. Fewer than that on either side: do not report it.',
-  '2. The difference in mean restedness between the two groups must be at least 1.0 points on the 1-10 scale. Smaller gaps are noise at this sample size.',
-  '3. Confidence: "high" needs 5+ nights on each side AND a gap of 1.5+ points. "medium" needs 3+ nights each side and a gap of 1.0+. Anything weaker is "low" and is usually better left unreported.',
-  '4. Every claim must cite concrete evidence from the data: the two group means, the number of nights in each group, or specific dates. Never write evidence that cannot be checked against the records provided.',
-  '5. Records with lateEntry set to true were rated from memory hours or days afterwards. Treat them as weaker evidence, and say so if a pattern leans on them.',
-  '6. Report at most 3 patterns. Fewer is normal. Zero is a correct answer.',
-  '',
-  'If nothing clears these bars, return an empty patterns array and set insufficientData to true. This is the expected outcome for small or noisy logs, and it is a success, not a failure. Do not soften it by reporting a weak pattern anyway. Do not invent an encouraging observation to be helpful. An honest "not enough signal yet" is more useful to this person than a plausible-sounding correlation that is not there.',
-  '',
-  'The note field is one short sentence of plain context - what you looked at, or what would make the next analysis stronger. No advice, no encouragement, no medical claims.'
-].join('\n');
+/* The model name, the system prompt and the response schema all live in
+   api/insights.js, not here. Two reasons: the API key must stay on the
+   server, and keeping the prompt there means this public endpoint can only
+   ever ask one question about sleep data — it cannot be used by a stranger
+   as a free general-purpose Claude proxy. */
 
 function renderInsights() {
   var done = completeRecords();
@@ -1148,14 +1103,8 @@ function runInsights(useRandom) {
   clearError();
 
   var payload = buildPayload(useRandom);
-  var userMsg =
-    (useRandom
-      ? 'These records are randomly generated test data with no real relationship between behaviour and sleep.\n\n'
-      : '') +
-    'Here are ' + payload.length + ' complete nights as JSON. Restedness and sleepQuality are 1-10.\n\n' +
-    JSON.stringify(payload);
 
-  callClaude(userMsg)
+  callInsights(payload, useRandom)
     .then(function (result) {
       if (useRandom) return renderPatterns(result, true, payload.length);
 
@@ -1186,68 +1135,22 @@ function runInsights(useRandom) {
     });
 }
 
-function callClaude(userMsg) {
-  var body = {
-    model: MODEL,
-    max_tokens: 8000,
-    thinking: { type: 'adaptive' },
-    output_config: { format: { type: 'json_schema', schema: INSIGHT_SCHEMA } },
-    system: SYSTEM_PROMPT,
-    messages: [{ role: 'user', content: userMsg }]
-  };
-
-  return post(body)
-    .catch(function (err) {
-      // If the endpoint rejects the newer request shape, retry without
-      // structured outputs and parse defensively instead.
-      if (!/^HTTP 4/.test(err.message)) throw err;
-      var plain = {
-        model: MODEL,
-        max_tokens: 4000,
-        system: SYSTEM_PROMPT + '\n\nReturn ONLY a JSON object with keys patterns, insufficientData, note. No markdown, no preamble.',
-        messages: body.messages
-      };
-      return post(plain);
-    });
-}
-
-function post(body) {
+/* One request, and the function hands back the parsed object directly —
+   the JSON parsing and the Anthropic call both happen server-side. */
+function callInsights(nights, control) {
   return fetch(API_URL, {
     method: 'POST',
-    headers: { 'content-type': 'application/json', 'anthropic-version': '2023-06-01' },
-    body: JSON.stringify(body)
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ nights: nights, control: !!control })
   }).then(function (res) {
-    if (!res.ok) {
-      return res.text().then(function (t) {
-        throw new Error('HTTP ' + res.status + (t ? ' — ' + t.slice(0, 160) : ''));
+    return res.json()
+      .catch(function () { throw new Error('The server replied with something unreadable (HTTP ' + res.status + ').'); })
+      .then(function (data) {
+        if (!res.ok) throw new Error(data && data.error ? data.error : 'HTTP ' + res.status);
+        return data;
       });
-    }
-    return res.json();
-  }).then(function (data) {
-    if (data.stop_reason === 'refusal') throw new Error('The model declined this request.');
-    var text = (data.content || [])
-      .filter(function (b) { return b.type === 'text'; })
-      .map(function (b) { return b.text; })
-      .join('')
-      .trim();
-    if (!text) throw new Error('The response contained no text.');
-    return parseLoose(text);
   });
 }
-
-/* Structured outputs should make this unnecessary, but a proxy that strips
-   output_config would send prose back, so strip fences before parsing. */
-function parseLoose(text) {
-  var cleaned = text.replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
-  try {
-    return JSON.parse(cleaned);
-  } catch (err) {
-    var start = cleaned.indexOf('{'), end = cleaned.lastIndexOf('}');
-    if (start >= 0 && end > start) return JSON.parse(cleaned.slice(start, end + 1));
-    throw new Error('The response was not valid JSON.');
-  }
-}
-
 function renderPatterns(result, wasControl, n) {
   var out = document.getElementById('insight-out');
   var patterns = Array.isArray(result.patterns) ? result.patterns : [];
