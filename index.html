@@ -96,6 +96,9 @@
 
   /* ---------- auth ---------- */
   #auth { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 2rem 1.25rem; }
+  /* An id selector beats the browser default [hidden]{display:none}, so the
+     hidden attribute needs to be honoured explicitly on these two screens. */
+  #auth[hidden], #app[hidden] { display: none; }
   .auth-card { width: 100%; max-width: 380px; }
   .brand { font-size: 2.6rem; letter-spacing: -.03em; margin-bottom: .2rem; }
   .brand-sub { color: var(--ink-faint); margin: 0 0 2.2rem; font-family: var(--serif); font-style: italic; }
