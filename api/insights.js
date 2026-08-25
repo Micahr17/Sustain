@@ -48,7 +48,6 @@ var SCHEMA = {
   properties: {
     patterns: {
       type: 'array',
-      maxItems: 3,
       items: {
         type: 'object',
         properties: {
