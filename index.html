@@ -209,18 +209,18 @@
 <div id="auth">
   <div class="auth-card">
     <h1 class="brand">Sustain</h1>
-    <p class="brand-sub">What you did, and how you slept after it.</p>
+    <p class="brand-sub">Your habit and energy journal.</p>
 
     <div class="banner error" id="auth-error" hidden></div>
 
     <form id="auth-form">
       <div class="field">
         <label for="username">Username</label>
-        <input type="text" id="username" autocomplete="username" autocapitalize="none" spellcheck="false">
+        <input type="text" id="username" name="username" autocomplete="username" autocapitalize="none" spellcheck="false">
       </div>
       <div class="field">
         <label for="password">Password</label>
-        <input type="password" id="password" autocomplete="current-password">
+        <input type="password" id="password" name="password" autocomplete="current-password" minlength="4">
       </div>
       <label class="remember">
         <input type="checkbox" id="remember" checked>
@@ -477,9 +477,34 @@ document.getElementById('auth-switch').addEventListener('click', function () {
   authMode = authMode === 'signin' ? 'signup' : 'signin';
   document.getElementById('auth-submit').textContent = authMode === 'signin' ? 'Sign in' : 'Create account';
   this.textContent = authMode === 'signin' ? 'New here? Create an account' : 'Already have an account? Sign in';
-  document.getElementById('password').autocomplete = authMode === 'signin' ? 'current-password' : 'new-password';
+  setPasswordMode();
   clearError();
 });
+
+/* Chrome offers a generated password when it sees a field marked
+   autocomplete="new-password" inside a form it reads as a signup. It makes
+   that decision when the field is parsed, so flipping the attribute on a
+   live input often does nothing — replacing the element with a fresh one
+   makes the browser re-run its heuristics. This needs a secure origin: over
+   https you get "Suggest strong password"; opened as a local file you will
+   not, because Chrome will not save a password for a file:// page. */
+function setPasswordMode() {
+  var old = document.getElementById('password');
+  var next = document.createElement('input');
+  next.type = 'password';
+  next.id = 'password';
+  next.minLength = 4;
+  if (authMode === 'signup') {
+    next.name = 'new-password';
+    next.autocomplete = 'new-password';
+    next.placeholder = 'Choose one, or let your browser suggest';
+  } else {
+    next.name = 'password';
+    next.autocomplete = 'current-password';
+  }
+  old.parentNode.replaceChild(next, old);
+  next.focus();
+}
 
 document.getElementById('auth-form').addEventListener('submit', function (e) {
   e.preventDefault();
