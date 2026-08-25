@@ -428,17 +428,19 @@ var PRESET_TAGS = [
 var session = null;      // { id, username }
 var records = [];        // night records, unsorted
 var customTags = [];     // [{ id, label }]
+var insights = [];       // saved analyses, newest appended last
 var view = 'home';
 var draft = null;        // in-progress form state
 
 function dataKey() { return K_DATA + session.id; }
 
 function loadData() {
-  var d = readJSON(dataKey(), { records: [], customTags: [] });
+  var d = readJSON(dataKey(), { records: [], customTags: [], insights: [] });
   records = Array.isArray(d.records) ? d.records : [];
   customTags = Array.isArray(d.customTags) ? d.customTags : [];
+  insights = Array.isArray(d.insights) ? d.insights : [];
 }
-function saveData() { writeJSON(dataKey(), { records: records, customTags: customTags }); }
+function saveData() { writeJSON(dataKey(), { records: records, customTags: customTags, insights: insights }); }
 
 function allTags() { return PRESET_TAGS.concat(customTags); }
 function tagLabel(id) {
@@ -547,7 +549,7 @@ function startSession(user) {
 
 document.getElementById('signout').addEventListener('click', function () {
   try { localStorage.removeItem(K_SESSION); } catch (err) { /* nothing to clear */ }
-  session = null; records = []; customTags = []; draft = null;
+  session = null; records = []; customTags = []; insights = []; draft = null;
   document.getElementById('app').hidden = true;
   document.getElementById('auth').hidden = false;
   document.getElementById('password').value = '';
@@ -955,7 +957,7 @@ function openMissedMorning() {
 /* ---------- export ---------- */
 function exportData() {
   try {
-    var payload = { app: 'Sustain', exportedAt: new Date().toISOString(), username: session.username, customTags: customTags, records: sortedRecords() };
+    var payload = { app: 'Sustain', exportedAt: new Date().toISOString(), username: session.username, customTags: customTags, records: sortedRecords(), insights: insights };
     var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
     var url = URL.createObjectURL(blob);
     var a = document.createElement('a');
@@ -974,6 +976,7 @@ function exportData() {
    INSIGHTS — the AI call
    ===================================================================== */
 var MIN_NIGHTS = 7;
+var WINDOW = 7;                        // nights per analysis — one week, matching the journal
 var API_URL = '/v1/messages';          // same-origin proxy; the key is handled server-side
 var MODEL = 'claude-sonnet-4-6';
 
@@ -1043,28 +1046,69 @@ function renderInsights() {
     return;
   }
 
+  var w = windowNights();
+
   root.innerHTML =
     '<div class="panel">' +
       '<p class="eyebrow">Insights</p>' +
       '<h2>Look for patterns</h2>' +
-      '<p class="lede">Sends your last ' + Math.min(done.length, 30) + ' complete nights for analysis. Nothing is sent until you ask.</p>' +
+      '<p class="lede">Analyses your ' + w.length + ' most recent complete nights — ' +
+        escapeHtml(w[w.length - 1].date) + ' to ' + escapeHtml(w[0].date) +
+        '. The same week you can scroll through in the journal.</p>' +
       '<div class="row mt2">' +
-        '<button class="btn-primary" id="run-insights">Analyse my nights</button>' +
+        '<button class="btn-primary" id="run-insights">Analyse this week</button>' +
         '<button class="btn-link" id="run-control">Run the noise check</button>' +
       '</div>' +
-      '<p class="faint" style="margin-top:1rem">The noise check sends randomly generated nights instead of yours. A well-behaved prompt should find nothing in them.</p>' +
+      '<p class="faint" style="margin-top:1rem">Each analysis is saved below, so you can look back at what a past week told you. The noise check sends randomly generated nights instead of yours and is never saved.</p>' +
     '</div>' +
-    '<div id="insight-out" class="mt2"></div>';
+    '<div id="insight-out" class="mt2"></div>' +
+    '<div id="insight-history"></div>';
 
   document.getElementById('run-insights').addEventListener('click', function () { runInsights(false); });
   document.getElementById('run-control').addEventListener('click', function () { runInsights(true); });
+  refreshHistory();
+}
+
+/* The seven most recent complete nights, newest first — the same window the
+   journal shows, so an insight can be checked against the entries above it. */
+function windowNights() { return completeRecords().slice(0, WINDOW); }
+
+function refreshHistory() {
+  var el = document.getElementById('insight-history');
+  if (!el) return;
+  if (!insights.length) { el.innerHTML = ''; return; }
+  el.innerHTML = '<p class="eyebrow mt2">Saved insights</p>' +
+    insights.slice().reverse().map(savedInsightHtml).join('');
+}
+
+function savedInsightHtml(entry) {
+  var when = new Date(entry.runAt);
+  var body = entry.patterns.length
+    ? entry.patterns.map(function (p) {
+        var conf = ['high', 'medium', 'low'].indexOf(p.confidence) >= 0 ? p.confidence : 'low';
+        return '<div style="margin-top:1rem">' +
+          '<h4 style="margin:0 0 .35rem;font-size:1rem;font-weight:600;line-height:1.45">' + escapeHtml(String(p.claim || '')) + '</h4>' +
+          '<p class="ev" style="margin:0">' + escapeHtml(String(p.evidence || '')) + '</p>' +
+          '<span class="conf ' + conf + '">' + conf + ' confidence</span></div>';
+      }).join('')
+    : '<p class="faint" style="margin-top:.8rem">Not enough signal in these nights.</p>';
+
+  return '<div class="entry">' +
+    '<div class="entry-date">' +
+      '<h3>' + escapeHtml(entry.from) + ' &rarr; ' + escapeHtml(entry.to) + '</h3>' +
+      '<span class="pill late">' + escapeHtml(when.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })) + '</span>' +
+    '</div>' +
+    '<p class="faint" style="margin:0">' + entry.nightCount + ' nights analysed</p>' +
+    body +
+    (entry.note ? '<p class="faint" style="margin-top:1rem">' + escapeHtml(entry.note) + '</p>' : '') +
+  '</div>';
 }
 
 /* Only the fields that matter are sent: no free-text notes beyond what the
    user wrote, no account details, and only complete nights. */
 function buildPayload(useRandom) {
-  if (useRandom) return randomNights(20);
-  return completeRecords().slice(0, 30).map(function (r) {
+  if (useRandom) return randomNights(WINDOW);
+  return completeRecords().slice(0, WINDOW).map(function (r) {
     return {
       date: r.date,
       tags: r.evening.tags,
@@ -1112,7 +1156,26 @@ function runInsights(useRandom) {
     JSON.stringify(payload);
 
   callClaude(userMsg)
-    .then(function (result) { renderPatterns(result, useRandom, payload.length); })
+    .then(function (result) {
+      if (useRandom) return renderPatterns(result, true, payload.length);
+
+      // A real analysis is kept, the way a journal entry is: the week it
+      // covered, what it found, and when it was run.
+      var w = windowNights();
+      insights.push({
+        id: 'i' + Date.now().toString(36),
+        runAt: new Date().toISOString(),
+        from: w[w.length - 1].date,
+        to: w[0].date,
+        nightCount: w.length,
+        patterns: Array.isArray(result.patterns) ? result.patterns : [],
+        insufficientData: !!result.insufficientData,
+        note: result.note || ''
+      });
+      saveData();
+      out.innerHTML = '<div class="banner info">Saved to your insights below.</div>';
+      refreshHistory();
+    })
     .catch(function (err) {
       out.innerHTML =
         '<div class="banner error">Could not complete the analysis: ' + escapeHtml(err.message) + '</div>' +
