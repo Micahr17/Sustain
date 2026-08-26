@@ -200,6 +200,7 @@
 
   .topbar {
     position: sticky; top: 0; z-index: 20;
+    background: var(--bg);
     background: color-mix(in srgb, var(--bg) 88%, transparent);
     backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--line);
@@ -221,6 +222,7 @@
   .tabbar {
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
     display: flex;
+    background: var(--surface);
     background: color-mix(in srgb, var(--surface) 92%, transparent);
     backdrop-filter: blur(14px);
     border-top: 1px solid var(--line);
@@ -336,7 +338,7 @@
   .note-text { font-family: var(--serif); font-size: 1.02rem; line-height: 1.6; color: var(--ink-2); }
 
   .banner { padding: var(--s3) var(--s4); border-radius: var(--r-sm); font-size: .92rem; }
-  .banner-error { background: color-mix(in srgb, var(--danger) 12%, var(--surface)); color: var(--danger); border: 1px solid color-mix(in srgb, var(--danger) 28%, transparent); }
+  .banner-error { background: var(--surface); background: color-mix(in srgb, var(--danger) 12%, var(--surface)); color: var(--danger); border: 1px solid var(--line-2); border-color: color-mix(in srgb, var(--danger) 28%, transparent); }
   .banner-ok { background: var(--sage-soft); color: var(--sage); }
   .banner-info { background: var(--surface-2); color: var(--ink-2); }
   [hidden] { display: none !important; }
@@ -1168,6 +1170,12 @@ function bindScale(id, initial) {
    ===================================================================== */
 var calMonth = null;   // first of the displayed month
 
+function openCheckIn(kind, date) {
+  go(kind === "day" ? "journal" : "today");
+  pending = { kind: kind, date: date };
+  render();
+}
+
 function renderJournal() {
   if (pending && pending.kind === 'day') return renderDay(pending.date);
   if (!calMonth) calMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
@@ -1183,7 +1191,7 @@ function renderJournal() {
           '<button class="btn btn-primary btn-sm" id="j-start" style="width:auto;margin-top:1.5rem">Log an evening</button>' +
         '</div>' +
       '</section>';
-    document.getElementById('j-start').addEventListener('click', function () { pending = { kind: 'evening', date: today() }; go('today'); pending = { kind: 'evening', date: today() }; render(); });
+    document.getElementById('j-start').addEventListener('click', function () { openCheckIn('evening', today()); });
     return;
   }
 
@@ -1333,11 +1341,11 @@ function renderDay(date) {
     '</section>';
 
   document.getElementById('day-back').addEventListener('click', function () { pending = null; renderJournal(); });
-  document.getElementById('day-edit').addEventListener('click', function () { pending = { kind: 'evening', date: date }; go('today'); pending = { kind: 'evening', date: date }; render(); });
+  document.getElementById('day-edit').addEventListener('click', function () { openCheckIn('evening', date); });
   var em = document.getElementById('day-edit-m');
-  if (em) em.addEventListener('click', function () { pending = { kind: 'morning', date: date }; go('today'); pending = { kind: 'morning', date: date }; render(); });
+  if (em) em.addEventListener('click', function () { openCheckIn('morning', date); });
   var dm = document.getElementById('day-morning');
-  if (dm) dm.addEventListener('click', function () { pending = { kind: 'morning', date: date }; go('today'); pending = { kind: 'morning', date: date }; render(); });
+  if (dm) dm.addEventListener('click', function () { openCheckIn('morning', date); });
 
   document.getElementById('day-delete').addEventListener('click', function () {
     confirmAction('Delete this night?', 'The habits, reflection and ratings for ' + prettyDate(date, { month: 'long', day: 'numeric' }) + ' will be removed. This cannot be undone.', 'Delete', function () {
