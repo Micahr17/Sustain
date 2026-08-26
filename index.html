@@ -852,12 +852,14 @@ function renderJournal() {
       '<p class="eyebrow" style="margin:0">' + list.length + ' ' + (list.length === 1 ? 'night' : 'nights') + '</p>' +
       '<div class="row">' +
         '<button class="btn-link" id="add-missed">Add a missed entry</button>' +
-        '<button class="btn-link" id="export">Export JSON</button>' +
+        '<button class="btn-link" id="export">Export</button>' +
+        '<button class="btn-link" id="import">Import</button>' +
       '</div>' +
     '</div>' +
     list.map(entryHtml).join('');
 
   document.getElementById('export').addEventListener('click', exportData);
+  document.getElementById('import').addEventListener('click', openImport);
   document.getElementById('add-missed').addEventListener('click', openMissedPicker);
   document.querySelectorAll('[data-fill]').forEach(function (b) {
     b.addEventListener('click', function () {
@@ -978,6 +980,137 @@ function exportData() {
   } catch (err) {
     showError('Export failed: ' + err.message);
   }
+}
+
+/* ---------- import ----------
+   Moving a journal between devices, since browser storage never leaves the
+   device it was written on. The merge is additive and never destructive:
+   nights you already have are kept, missing halves are filled in, and a
+   night present on both sides is left exactly as it is. Worst case for a
+   mistaken import is some extra nights, not a lost journal. */
+function openImport() {
+  root.innerHTML =
+    '<div class="panel">' +
+      '<p class="eyebrow">Moving devices</p>' +
+      '<h2>Import a journal</h2>' +
+      '<p class="lede">Choose a file exported from Sustain on another device. Nothing you already have is overwritten.</p>' +
+      '<div style="margin-top:1.4rem"><input type="file" id="import-file" accept="application/json,.json"></div>' +
+      '<div id="import-preview"></div>' +
+      '<div class="row mt2"><button class="btn-link" id="import-cancel">Back to journal</button></div>' +
+    '</div>';
+
+  document.getElementById('import-cancel').addEventListener('click', function () { go('journal'); });
+  document.getElementById('import-file').addEventListener('change', function () {
+    var file = this.files && this.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onerror = function () { showError('That file could not be read.'); };
+    reader.onload = function () {
+      var payload;
+      try {
+        payload = JSON.parse(String(reader.result));
+      } catch (err) {
+        document.getElementById('import-preview').innerHTML =
+          '<div class="banner error" style="margin-top:1.2rem">That file is not valid JSON. Make sure it is the file Sustain exported.</div>';
+        return;
+      }
+      if (!payload || !Array.isArray(payload.records)) {
+        document.getElementById('import-preview').innerHTML =
+          '<div class="banner error" style="margin-top:1.2rem">That JSON has no records in it, so it is probably not a Sustain export.</div>';
+        return;
+      }
+      previewImport(payload);
+    };
+    reader.readAsText(file);
+  });
+}
+
+/* Count first, apply only on confirmation — an import edits the journal, so
+   it should say what it is about to do before it does it. */
+function previewImport(payload) {
+  var plan = { add: 0, fill: 0, same: 0 };
+  payload.records.forEach(function (r) {
+    if (!r || !r.date) return;
+    var mine = getRecord(r.date);
+    if (!mine) return plan.add++;
+    if ((!mine.evening && r.evening) || (!mine.morning && r.morning)) return plan.fill++;
+    plan.same++;
+  });
+
+  var el = document.getElementById('import-preview');
+  el.innerHTML =
+    '<div class="banner info" style="margin-top:1.2rem">' +
+      '<strong>' + payload.records.length + ' nights in that file.</strong><br>' +
+      plan.add + ' new to this device, ' +
+      plan.fill + ' would fill a missing half, ' +
+      plan.same + ' already here and left alone.' +
+    '</div>' +
+    '<div class="row"><button class="btn-primary" id="import-go">Import</button></div>';
+
+  document.getElementById('import-go').addEventListener('click', function () {
+    var result = applyImport(payload);
+    go('journal');
+    var banner = document.createElement('div');
+    banner.className = 'banner info';
+    banner.textContent = 'Imported: ' + result.added + ' nights added, ' + result.filled +
+      ' completed, ' + result.same + ' left as they were' +
+      (result.tags ? ', ' + result.tags + ' custom tags added' : '') +
+      (result.past ? ', ' + result.past + ' past insights added' : '') + '.';
+    root.insertBefore(banner, root.firstChild);
+  });
+}
+
+function applyImport(payload) {
+  var out = { added: 0, filled: 0, same: 0, tags: 0, past: 0 };
+
+  payload.records.forEach(function (r) {
+    if (!r || typeof r.date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(r.date)) return;
+    var mine = getRecord(r.date);
+    if (!mine) {
+      mine = { date: r.date, evening: null, morning: null, complete: false };
+      records.push(mine);
+      out.added++;
+    } else if ((!mine.evening && r.evening) || (!mine.morning && r.morning)) {
+      out.filled++;
+    } else {
+      out.same++;
+      return;
+    }
+    if (!mine.evening && r.evening) {
+      mine.evening = {
+        tags: Array.isArray(r.evening.tags) ? r.evening.tags.map(String) : [],
+        note: String(r.evening.note || '').slice(0, 200),
+        loggedAt: r.evening.loggedAt || new Date().toISOString()
+      };
+    }
+    if (!mine.morning && r.morning) {
+      mine.morning = {
+        sleepQuality: Math.min(10, Math.max(1, Math.round(Number(r.morning.sleepQuality)) || 1)),
+        restedness: Math.min(10, Math.max(1, Math.round(Number(r.morning.restedness)) || 1)),
+        wokeDuringNight: !!r.morning.wokeDuringNight,
+        loggedAt: r.morning.loggedAt || new Date().toISOString(),
+        lateEntry: !!r.morning.lateEntry
+      };
+    }
+    mine.complete = !!(mine.evening && mine.morning);
+  });
+
+  (payload.customTags || []).forEach(function (t) {
+    if (!t || !t.id) return;
+    if (allTags().some(function (x) { return x.id === t.id; })) return;
+    customTags.push({ id: String(t.id), label: String(t.label || t.id) });
+    out.tags++;
+  });
+
+  (payload.insights || []).forEach(function (ins) {
+    if (!ins || !ins.id) return;
+    if (insights.some(function (x) { return x.id === ins.id; })) return;
+    insights.push(ins);
+    out.past++;
+  });
+
+  saveData();
+  return out;
 }
 
 /* =====================================================================
