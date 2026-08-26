@@ -1378,9 +1378,47 @@ function confirmAction(title, body, verb, onYes) {
 
 /* =====================================================================
    INSIGHTS
+
+   Two layers, deliberately:
+
+   1. Local analysis — arithmetic over your own records, instant and free.
+      It runs every time you open the page and answers the ordinary
+      questions: how is energy trending, which habits am I consistent
+      with, what tends to happen on my best days.
+
+   2. The AI pass — on demand only, one week at a time, for the reading a
+      person would do rather than a calculator. It costs a request, so it
+      never runs on its own.
+
+   Both use the same evidence bar. A pattern needs at least 3 nights on
+   each side, a gap that scales with sample size, no overlap between the
+   two groups, and no other habit tracking the same nights. Restedness on
+   a 1-10 scale scatters with a standard deviation near 3, so small gaps
+   across a handful of nights are ordinary chance, not signal.
    ===================================================================== */
 var MIN_NIGHTS = 7, WINDOW = 7;
 var API_URL = '/api/insights';
+var range = 30;                     // 7 | 30 | 90 | 0 (all time)
+
+function rangeLabel(n) { return n === 0 ? 'All time' : n + ' days'; }
+
+/* Complete nights inside the window, newest first. */
+function rangeRecords(n) {
+  var all = completeRecords();
+  if (!n) return all;
+  var cutoff = shiftDate(today(), -(n - 1));
+  return all.filter(function (r) { return r.date >= cutoff; });
+}
+/* The window immediately before it, for honest period-on-period comparison. */
+function priorRecords(n) {
+  if (!n) return [];
+  var end = shiftDate(today(), -n);
+  var start = shiftDate(today(), -(n * 2 - 1));
+  return completeRecords().filter(function (r) { return r.date >= start && r.date <= end; });
+}
+
+function mean(nums) { return nums.reduce(function (a, b) { return a + b; }, 0) / nums.length; }
+function energyOf(rs) { return rs.map(function (r) { return r.morning.restedness; }); }
 
 function renderInsights() {
   var done = completeRecords();
@@ -1396,45 +1434,68 @@ function renderInsights() {
           '<div style="height:6px;background:var(--surface-2);border-radius:999px;margin:1rem 0 .75rem;overflow:hidden">' +
             '<div style="height:100%;width:' + pct + '%;background:var(--accent);border-radius:999px"></div>' +
           '</div>' +
-          '<p class="t-small">Once you have a week of complete nights, Sustain can start looking for patterns in your data. Below seven, there is not enough to tell a pattern from a coincidence.</p>' +
+          '<p class="t-small">Once you have a week of complete nights, Sustain can start looking for patterns. Below seven there is not enough here to tell a pattern from a coincidence.</p>' +
         '</div>' +
-        energyOverview(done) +
-        habitConsistency() +
+        (done.length ? energyPanel(done, []) : emptyInsights()) +
       '</section>';
     return;
   }
 
+  var rows = rangeRecords(range);
+  var prior = priorRecords(range);
+
   root().innerHTML =
     '<section class="stack-lg">' +
-      '<h1>Insights</h1>' +
-      energyOverview(done) +
-      habitConsistency() +
-      '<div class="card pad">' +
-        '<p class="t-eyebrow">Patterns</p>' +
-        '<h2 style="margin-top:.5rem">What is your data suggesting?</h2>' +
-        '<p class="t-small" style="margin-top:.6rem">Sends your last ' + Math.min(done.length, WINDOW) + ' complete nights for analysis. Nothing leaves this device until you ask.</p>' +
-        '<button class="btn btn-primary" id="run-insights" style="margin-top:1.25rem">Look for patterns</button>' +
-        '<button class="btn btn-ghost btn-sm" id="run-control" style="margin-top:.5rem;width:100%">Run the noise check</button>' +
-      '</div>' +
+      '<div class="row-between"><h1>Insights</h1></div>' +
+      rangeSwitcher() +
+      (rows.length < 2
+        ? '<div class="card pad empty"><h3>Nothing in this window</h3><p class="t-small" style="margin-top:.5rem">You have complete nights, but none inside the last ' + range + ' days. Try a wider range.</p></div>'
+        : energyPanel(rows, prior) + habitPanel(rows) + patternPanel(rows) + weeklyReview()) +
+      aiPanel(done) +
       '<div id="insight-out"></div>' +
       historyHtml() +
     '</section>';
 
-  document.getElementById('run-insights').addEventListener('click', function () { runInsights(false); });
-  document.getElementById('run-control').addEventListener('click', function () { runInsights(true); });
+  document.querySelectorAll('[data-range]').forEach(function (b) {
+    b.addEventListener('click', function () { range = Number(b.dataset.range); renderInsights(); });
+  });
+  var run = document.getElementById('run-insights');
+  if (run) {
+    run.addEventListener('click', function () { runInsights(false); });
+    document.getElementById('run-control').addEventListener('click', function () { runInsights(true); });
+  }
 }
 
-function energyOverview(done) {
-  if (!done.length) {
-    return '<div class="card pad empty"><h3>Your patterns will appear here.</h3>' +
-      '<p class="t-small" style="margin-top:.5rem">Keep logging and Sustain will start finding connections in your data.</p></div>';
+function emptyInsights() {
+  return '<div class="card pad empty"><h3>Your patterns will appear here.</h3>' +
+    '<p class="t-small" style="margin-top:.5rem">Keep logging your days and Sustain will start finding connections in your data.</p></div>';
+}
+
+function rangeSwitcher() {
+  return '<div class="row" role="group" aria-label="Time range" style="gap:.4rem;flex-wrap:wrap">' +
+    [7, 30, 90, 0].map(function (n) {
+      var on = range === n;
+      return '<button class="btn btn-sm ' + (on ? 'btn-primary' : 'btn-secondary') + '" data-range="' + n +
+        '" aria-pressed="' + on + '" style="width:auto">' + rangeLabel(n) + '</button>';
+    }).join('') +
+  '</div>';
+}
+
+/* ---------- energy ---------- */
+function energyPanel(rows, prior) {
+  var vals = energyOf(rows);
+  var avg = mean(vals);
+  var delta = prior.length >= 3 ? avg - mean(energyOf(prior)) : null;
+
+  var trendLine = '';
+  if (delta !== null) {
+    var word = Math.abs(delta) < 0.3 ? 'about the same as' : (delta > 0 ? 'higher than' : 'lower than');
+    trendLine = '<p class="t-small" style="margin-top:1rem">Your average energy was <strong>' + word +
+      '</strong> the previous ' + range + ' days' +
+      (Math.abs(delta) >= 0.3 ? ' <span class="t-num">(' + (delta > 0 ? '+' : '') + delta.toFixed(1) + ')</span>' : '') + '.</p>';
+  } else if (range) {
+    trendLine = '<p class="t-fine" style="margin-top:1rem">Not enough history yet to compare with the previous ' + range + ' days.</p>';
   }
-  var vals = done.map(function (r) { return r.morning.restedness; });
-  var avg = vals.reduce(function (a, b) { return a + b; }, 0) / vals.length;
-  var recent = vals.slice(0, Math.min(7, vals.length));
-  var prior = vals.slice(7, 14);
-  var rAvg = recent.reduce(function (a, b) { return a + b; }, 0) / recent.length;
-  var delta = prior.length >= 3 ? rAvg - (prior.reduce(function (a, b) { return a + b; }, 0) / prior.length) : null;
 
   return '<div class="card pad">' +
     '<p class="t-eyebrow">Energy</p>' +
@@ -1442,13 +1503,10 @@ function energyOverview(done) {
       '<div class="metric"><div class="k">Average</div><div class="v t-num">' + avg.toFixed(1) + '</div></div>' +
       '<div class="metric"><div class="k">Highest</div><div class="v t-num">' + Math.max.apply(null, vals) + '</div></div>' +
       '<div class="metric"><div class="k">Lowest</div><div class="v t-num">' + Math.min.apply(null, vals) + '</div></div>' +
+      '<div class="metric"><div class="k">Nights</div><div class="v t-num">' + rows.length + '</div></div>' +
     '</div>' +
-    (delta !== null
-      ? '<p class="t-small" style="margin-top:1rem">Your average energy was ' +
-        (Math.abs(delta) < 0.3 ? 'about the same as' : (delta > 0 ? 'higher than' : 'lower than')) +
-        ' the previous week' + (Math.abs(delta) >= 0.3 ? ' <span class="t-num">(' + (delta > 0 ? '+' : '') + delta.toFixed(1) + ')</span>' : '') + '.</p>'
-      : '') +
-    chartHtml(done.slice(0, 30).reverse()) +
+    trendLine +
+    chartHtml(rows.slice().reverse()) +
   '</div>';
 }
 
@@ -1460,33 +1518,40 @@ function chartHtml(rows) {
   var y = function (v) { return PAD + (1 - (v - 1) / 9) * (H - PAD * 2); };
   var line = rows.map(function (r, i) { return (i ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(r.morning.restedness).toFixed(1); }).join(' ');
   var area = line + ' L' + x(n - 1).toFixed(1) + ' ' + (H - PAD) + ' L' + PAD + ' ' + (H - PAD) + ' Z';
+  var avgY = y(mean(energyOf(rows))).toFixed(1);
   return '<figure style="margin:1.25rem 0 0">' +
-    '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" height="90" preserveAspectRatio="none" role="img" aria-label="Your energy across the last ' + n + ' complete nights">' +
+    '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" height="90" preserveAspectRatio="none" role="img" aria-label="Your energy across ' + n + ' complete nights, averaging ' + mean(energyOf(rows)).toFixed(1) + ' out of 10">' +
       '<defs><linearGradient id="eg" x1="0" y1="0" x2="0" y2="1">' +
         '<stop offset="0%" stop-color="var(--accent)" stop-opacity=".22"/><stop offset="100%" stop-color="var(--accent)" stop-opacity="0"/>' +
       '</linearGradient></defs>' +
+      '<line x1="' + PAD + '" y1="' + avgY + '" x2="' + (W - PAD) + '" y2="' + avgY + '" stroke="var(--line-2)" stroke-width="1" stroke-dasharray="3 3" vector-effect="non-scaling-stroke"/>' +
       '<path d="' + area + '" fill="url(#eg)"/>' +
       '<path d="' + line + '" fill="none" stroke="var(--accent)" stroke-width="1.8" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"/>' +
     '</svg>' +
-    '<figcaption class="t-fine" style="margin-top:.4rem">Energy over your last ' + n + ' complete nights</figcaption>' +
+    '<figcaption class="t-fine" style="margin-top:.4rem">' + n + ' nights &middot; dashed line is your average</figcaption>' +
   '</figure>';
 }
 
-function habitConsistency() {
-  var done = sortedRecords().filter(function (r) { return r.evening; });
-  if (done.length < 3) return '';
-  var win = done.slice(0, 21);
-  var rows = activeHabits().map(function (h) {
-    var c = win.filter(function (r) { return r.evening.tags.indexOf(h.id) >= 0; }).length;
-    return { label: h.label, count: c, total: win.length };
-  }).sort(function (a, b) { return b.count - a.count; }).slice(0, 6);
-  if (!rows.length) return '';
+/* ---------- habit consistency ---------- */
+function habitPanel(rows) {
+  var logged = sortedRecords().filter(function (r) {
+    if (!r.evening) return false;
+    if (!range) return true;
+    return r.date >= shiftDate(today(), -(range - 1));
+  });
+  if (logged.length < 3) return '';
+
+  var stats = activeHabits().map(function (h) {
+    var c = logged.filter(function (r) { return r.evening.tags.indexOf(h.id) >= 0; }).length;
+    return { label: h.label, count: c, total: logged.length };
+  }).sort(function (a, b) { return b.count - a.count; });
+  if (!stats.length) return '';
 
   return '<div class="card pad">' +
-    '<p class="t-eyebrow">Consistency</p>' +
-    '<p class="t-small" style="margin-top:.4rem">Across your last ' + win.length + ' logged days.</p>' +
+    '<p class="t-eyebrow">Habits</p>' +
+    '<p class="t-small" style="margin-top:.4rem">Across your last ' + logged.length + ' logged days.</p>' +
     '<div style="margin-top:1rem">' +
-      rows.map(function (r) {
+      stats.map(function (r) {
         var pct = Math.round((r.count / r.total) * 100);
         return '<div style="margin-top:.85rem">' +
           '<div class="row-between"><span>' + escapeHtml(r.label) + '</span>' +
@@ -1497,6 +1562,167 @@ function habitConsistency() {
         '</div>';
       }).join('') +
     '</div>' +
+  '</div>';
+}
+
+/* ---------- local pattern detection ----------
+   Same bar the AI prompt is held to, computed here so the ordinary case
+   costs nothing and works offline. Language stays observational: these
+   are things you reported, not things that were proven. */
+function requiredGap(n) { return n < 14 ? 4.0 : 1.5; }
+function confidenceFor(n, withN, withoutN, gap) {
+  if (n < 14) return 'low';
+  if (n < 21) return (withN >= 5 && withoutN >= 5 && gap >= 1.5) ? 'medium' : 'low';
+  return (withN >= 7 && withoutN >= 7 && gap >= 2.0) ? 'high' : 'medium';
+}
+
+function localPatterns(rows) {
+  var n = rows.length;
+  if (n < MIN_NIGHTS) return [];
+  var found = [];
+
+  activeHabits().forEach(function (h) {
+    var withH = rows.filter(function (r) { return r.evening.tags.indexOf(h.id) >= 0; });
+    var without = rows.filter(function (r) { return r.evening.tags.indexOf(h.id) < 0; });
+    if (withH.length < 3 || without.length < 3) return;
+
+    var a = energyOf(withH), b = energyOf(without);
+    var gap = mean(a) - mean(b);
+    if (Math.abs(gap) < requiredGap(n)) return;
+
+    // Overlap test: if the groups interleave, one or two outliers are
+    // doing the work and this is not a pattern.
+    var separated = gap > 0 ? Math.min.apply(null, a) > Math.max.apply(null, b)
+                            : Math.max.apply(null, a) < Math.min.apply(null, b);
+    if (!separated && n < 14) return;
+
+    // Confounding: another habit sitting on nearly the same nights means
+    // the two cannot be told apart.
+    var twins = activeHabits().filter(function (o) {
+      if (o.id === h.id) return false;
+      var same = rows.filter(function (r) {
+        return (r.evening.tags.indexOf(o.id) >= 0) === (r.evening.tags.indexOf(h.id) >= 0);
+      }).length;
+      return same / n >= 0.85;
+    }).map(function (o) { return o.label; });
+
+    found.push({
+      label: h.label,
+      gap: gap,
+      withN: withH.length,
+      withoutN: without.length,
+      withAvg: mean(a),
+      withoutAvg: mean(b),
+      twins: twins,
+      confidence: confidenceFor(n, withH.length, without.length, Math.abs(gap))
+    });
+  });
+
+  return found.sort(function (x, y) { return Math.abs(y.gap) - Math.abs(x.gap); }).slice(0, 3);
+}
+
+function patternPanel(rows) {
+  var found = localPatterns(rows);
+
+  if (!found.length) {
+    var need = Math.max(0, 14 - rows.length);
+    return '<div class="card pad">' +
+      '<p class="t-eyebrow">Patterns</p>' +
+      '<h3 style="margin-top:.5rem">Nothing stands out yet</h3>' +
+      '<p class="t-small" style="margin-top:.5rem">' +
+        (need > 0
+          ? 'Keep logging for about another ' + need + ' days and Sustain will have enough to look properly. Below two weeks, differences this size are what random variation looks like.'
+          : 'Across these nights, no habit separates your energy clearly enough to be worth calling a pattern. That is a normal and honest result.') +
+      '</p>' +
+      '<p class="t-fine" style="margin-top:.8rem">Variety helps: habits you do every day, or never, give nothing to compare.</p>' +
+    '</div>';
+  }
+
+  return '<div>' +
+    '<p class="t-eyebrow" style="margin-bottom:.75rem">Patterns</p>' +
+    found.map(function (p) {
+      var dir = p.gap > 0 ? 'higher' : 'lower';
+      return '<div class="card pad" style="margin-bottom:.75rem">' +
+        '<h3>You tend to report ' + dir + ' energy on days with ' + escapeHtml(p.label.toLowerCase()) + '.</h3>' +
+        '<p class="t-small" style="margin-top:.5rem">' +
+          'Averaged <span class="t-num">' + p.withAvg.toFixed(1) + '</span> across ' + p.withN +
+          ' days with it, against <span class="t-num">' + p.withoutAvg.toFixed(1) + '</span> across ' + p.withoutN + ' days without.' +
+          (p.twins.length ? ' This travels with ' + escapeHtml(p.twins.join(' and ').toLowerCase()) + ', so their effects cannot be separated.' : '') +
+        '</p>' +
+        '<span class="pill ' + (p.confidence === 'low' ? 'pill-late' : 'pill-done') + '" style="margin-top:.9rem">' + p.confidence + ' confidence</span>' +
+      '</div>';
+    }).join('') +
+    '<p class="t-fine">Observations from your own log. They describe what you reported, not what caused it.</p>' +
+  '</div>';
+}
+
+/* ---------- weekly review ---------- */
+function weeklyReview() {
+  var thisWeek = completeRecords().filter(function (r) { return r.date >= shiftDate(today(), -6); });
+  if (thisWeek.length < 4) return '';
+  var lastWeek = completeRecords().filter(function (r) {
+    return r.date >= shiftDate(today(), -13) && r.date <= shiftDate(today(), -7);
+  });
+
+  var loggedThis = records.filter(function (r) { return r.date >= shiftDate(today(), -6) && r.evening; });
+  var avg = mean(energyOf(thisWeek));
+  var notes = loggedThis.filter(function (r) { return r.evening.note; }).length;
+  var slots = loggedThis.reduce(function (s, r) { return s + activeHabits().length; }, 0);
+  var hits = loggedThis.reduce(function (s, r) { return s + r.evening.tags.length; }, 0);
+  var consistency = slots ? Math.round((hits / slots) * 100) : 0;
+
+  var stood = [];
+  var best = thisWeek.slice().sort(function (a, b) { return b.morning.restedness - a.morning.restedness; })[0];
+  if (best && best.evening.tags.length) {
+    stood.push('Your highest-energy night was ' + prettyDate(best.date, { weekday: 'long' }).toLowerCase() +
+      ' at ' + best.morning.restedness + '/10, after ' + best.evening.tags.map(habitLabel).join(', ').toLowerCase() + '.');
+  }
+  if (lastWeek.length >= 3) {
+    var d = avg - mean(energyOf(lastWeek));
+    stood.push(Math.abs(d) < 0.3
+      ? 'Your energy held steady compared with last week.'
+      : 'Your average energy was ' + (d > 0 ? 'higher' : 'lower') + ' than last week (' + (d > 0 ? '+' : '') + d.toFixed(1) + ').');
+  }
+  var spread = Math.max.apply(null, energyOf(thisWeek)) - Math.min.apply(null, energyOf(thisWeek));
+  if (spread >= 4) stood.push('Your energy swung by ' + spread + ' points across the week, so something is varying a lot.');
+
+  // One gentle suggestion, always drawn from the user's own data.
+  var suggestion;
+  var rare = activeHabits().map(function (h) {
+    return { label: h.label, n: loggedThis.filter(function (r) { return r.evening.tags.indexOf(h.id) >= 0; }).length };
+  }).filter(function (x) { return x.n > 0 && x.n <= 2; }).sort(function (a, b) { return a.n - b.n; })[0];
+  var missingMornings = records.filter(function (r) { return r.date >= shiftDate(today(), -6) && r.evening && !r.morning; }).length;
+
+  if (missingMornings >= 2) suggestion = 'Try catching the morning check-in before noon — ' + missingMornings + ' nights this week are missing their rating, and a night only counts once it has both halves.';
+  else if (rare) suggestion = 'You logged ' + rare.label.toLowerCase() + ' on only ' + rare.n + (rare.n === 1 ? ' day' : ' days') + ' this week. A few more would give Sustain something to compare it against.';
+  else suggestion = 'Keep logging as you are. Another week at this rate and the patterns section will have real material to work with.';
+
+  return '<div class="card pad">' +
+    '<p class="t-eyebrow">Your week</p>' +
+    '<div class="metric-row" style="margin-top:.8rem">' +
+      '<div class="metric"><div class="k">Avg energy</div><div class="v t-num">' + avg.toFixed(1) + '<span class="t-fine">/10</span></div></div>' +
+      '<div class="metric"><div class="k">Habit rate</div><div class="v t-num">' + consistency + '%</div></div>' +
+      '<div class="metric"><div class="k">Reflections</div><div class="v t-num">' + notes + '</div></div>' +
+    '</div>' +
+    (stood.length
+      ? '<hr class="divider" style="margin:1.25rem 0"><p class="t-eyebrow">What stood out</p>' +
+        stood.map(function (s) { return '<p class="t-small" style="margin-top:.5rem">' + escapeHtml(s) + '</p>'; }).join('')
+      : '') +
+    '<hr class="divider" style="margin:1.25rem 0">' +
+    '<p class="t-eyebrow">One thing to try</p>' +
+    '<p class="t-small" style="margin-top:.5rem">' + escapeHtml(suggestion) + '</p>' +
+  '</div>';
+}
+
+/* ---------- the AI pass ---------- */
+function aiPanel(done) {
+  return '<div class="card pad">' +
+    '<p class="t-eyebrow">A closer read</p>' +
+    '<h3 style="margin-top:.5rem">Ask Sustain to look again</h3>' +
+    '<p class="t-small" style="margin-top:.5rem">Everything above is arithmetic on your own device. This sends your last ' +
+      Math.min(done.length, WINDOW) + ' complete nights for a closer reading — combinations of habits, and your written reflections, which the numbers above cannot see.</p>' +
+    '<button class="btn btn-primary" id="run-insights" style="margin-top:1.25rem">Look for patterns</button>' +
+    '<button class="btn btn-ghost btn-sm" id="run-control" style="margin-top:.5rem;width:100%">Run the noise check</button>' +
   '</div>';
 }
 
@@ -1578,13 +1804,13 @@ function callInsights(nights, control) {
         return data;
       });
   }).catch(function (err) {
-    if (err instanceof TypeError) throw new Error('No connection. Insights need the internet — everything else in Sustain works offline.');
+    if (err instanceof TypeError) throw new Error('No connection. A closer read needs the internet — everything else in Sustain works offline.');
     throw err;
   });
 }
 function friendlyApiError(status, msg) {
   if (status === 429) return 'That is a lot of analyses at once. Give it a minute and try again.';
-  if (status === 500 && /ANTHROPIC_API_KEY/.test(String(msg))) return 'Pattern analysis is not configured on this deployment yet.';
+  if (status === 500 && /ANTHROPIC_API_KEY/.test(String(msg))) return 'A closer read is not configured on this deployment yet.';
   if (status >= 500) return 'Sustain could not reach the analysis service. Please try again shortly.';
   return msg || 'Something went wrong running the analysis.';
 }
@@ -1613,7 +1839,7 @@ function patternCard(p) {
 
 function historyHtml() {
   if (!insights.length) return '';
-  return '<div><p class="t-eyebrow" style="margin-bottom:.75rem">Saved insights</p>' +
+  return '<div><p class="t-eyebrow" style="margin-bottom:.75rem">Saved readings</p>' +
     insights.slice(0, 12).map(function (i) {
       return '<div class="card pad" style="margin-bottom:.75rem">' +
         '<div class="row-between"><strong class="t-num">' + escapeHtml(i.from) + ' → ' + escapeHtml(i.to) + '</strong>' +
