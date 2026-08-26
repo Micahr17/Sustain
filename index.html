@@ -1234,7 +1234,7 @@ function lastLoggedGap() {
 
 function consistencyCard(recent) {
   var pct = Math.round((recent.done / recent.window) * 100);
-  return '<div class="card pad cal-card">' +
+  return '<div class="card pad">' +
     '<div class="row-between">' +
       '<div><p class="t-eyebrow">Consistency</p>' +
       '<p style="margin-top:.4rem"><strong class="t-num">' + recent.done + ' of the last ' + recent.window + ' days</strong> logged.</p></div>' +
@@ -1559,7 +1559,7 @@ function calendarHtml() {
       '<span class="t-num">' + d + '</span>' + dot + '</button>';
   }
   var names = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
-  return '<div class="card pad">' +
+  return '<div class="card pad cal-card">' +
     '<div class="row-between" style="margin-bottom:1rem">' +
       '<button class="btn btn-ghost btn-sm" id="cal-prev" aria-label="Previous month">&larr;</button>' +
       '<strong>' + calMonth.toLocaleDateString(undefined, { month: 'long', year: 'numeric' }) + '</strong>' +
