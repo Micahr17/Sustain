@@ -1873,14 +1873,19 @@ function localPatterns(rows) {
                             : Math.max.apply(null, a) < Math.min.apply(null, b);
     if (!separated && n < 14) return;
 
-    // Confounding: another habit sitting on nearly the same nights means
-    // the two cannot be told apart.
+    // Confounding: a habit sitting on nearly the same nights cannot be
+    // told apart from this one — and neither can its mirror image, a
+    // habit occupying almost exactly the opposite nights. Both are the
+    // same split of the data wearing a different name.
+    var twinIds = [];
     var twins = activeHabits().filter(function (o) {
       if (o.id === h.id) return false;
-      var same = rows.filter(function (r) {
+      var agree = rows.filter(function (r) {
         return (r.evening.tags.indexOf(o.id) >= 0) === (r.evening.tags.indexOf(h.id) >= 0);
-      }).length;
-      return same / n >= 0.85;
+      }).length / n;
+      var tied = agree >= 0.85 || agree <= 0.15;
+      if (tied) twinIds.push(o.id);
+      return tied;
     }).map(function (o) { return o.label; });
 
     found.push({
@@ -1890,12 +1895,25 @@ function localPatterns(rows) {
       withoutN: without.length,
       withAvg: mean(a),
       withoutAvg: mean(b),
+      id: h.id,
       twins: twins,
+      twinIds: twinIds,
       confidence: confidenceFor(n, withH.length, without.length, Math.abs(gap))
     });
   });
 
-  return found.sort(function (x, y) { return Math.abs(y.gap) - Math.abs(x.gap); }).slice(0, 3);
+
+  // One split, one card. Confounded habits are the same nights described
+  // differently, so the strongest is reported and the rest are named
+  // inside it rather than counted again as separate findings.
+  var kept = [];
+  found.sort(function (x, y) { return Math.abs(y.gap) - Math.abs(x.gap); }).forEach(function (p) {
+    var alreadyCovered = kept.some(function (k) {
+      return k.twinIds.indexOf(p.id) >= 0 || p.twinIds.indexOf(k.id) >= 0;
+    });
+    if (!alreadyCovered) kept.push(p);
+  });
+  return kept.slice(0, 3);
 }
 
 function patternPanel(rows) {
