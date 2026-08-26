@@ -166,7 +166,9 @@
   .btn-ghost { color: var(--ink-2); min-height: 40px; padding: 0 var(--s3); font-weight: 500; }
   .btn-ghost:hover { color: var(--ink); background: var(--surface-2); }
   .btn-danger { color: var(--danger); }
-  .btn-sm { min-height: 36px; padding: 0 var(--s3); font-size: .88rem; }
+  .btn-sm { min-height: 40px; padding: 0 var(--s3); font-size: .88rem; }
+  /* Fingers need more than a cursor does. */
+  @media (max-width: 719px) { .btn-sm, .btn-ghost { min-height: 44px; } }
 
   input[type="text"], input[type="password"], input[type="date"], input[type="time"], input[type="search"], textarea, select {
     width: 100%;
