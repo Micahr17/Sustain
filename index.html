@@ -1111,6 +1111,9 @@ function go(next) {
 var root = function () { return document.getElementById('view'); };
 
 function render() {
+  // Nothing renders without a session. Not user-reachable today, but a
+  // guard here beats a null dereference if a future path calls in early.
+  if (!session || !settings) return;
   if (view === 'today') return renderToday();
   if (view === 'journal') return renderJournal();
   if (view === 'insights') return renderInsights();
