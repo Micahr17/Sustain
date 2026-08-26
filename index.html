@@ -3,7 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0e1220">
+<meta name="theme-color" content="#f7f7f5" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0f1216" media="(prefers-color-scheme: dark)">
+<meta name="description" content="Sustain helps you track your habits, log your energy, and discover the patterns behind your best days.">
+<meta property="og:title" content="Sustain — Discover what makes you feel your best">
+<meta property="og:description" content="Track your habits. Log your energy. Discover your patterns.">
+<meta property="og:type" content="website">
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/icon.png">
 <link rel="icon" href="/icon.png">
@@ -11,284 +16,499 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Sustain">
-<title>Sustain</title>
+<title>Sustain — Discover what makes you feel your best</title>
 <style>
+  /* =====================================================================
+     DESIGN TOKENS
+     Light is the base palette; dark redefines only the tokens. Every
+     component reads tokens, never a literal colour, so both themes stay
+     consistent and a colour can never be defined in only one of them.
+     ===================================================================== */
   :root {
-    --bg: #0e1220;
-    --bg-2: #131829;
-    --ink: #e9eaf3;
-    --ink-soft: #a6abc4;
-    --ink-faint: #757c99;
+    --bg:        #f6f6f3;
+    --surface:   #ffffff;
+    --surface-2: #f1f1ee;
+    --ink:       #16181c;
+    --ink-2:     #545a62;
+    --ink-3:     #878d96;
+    --line:      #e3e4e0;
+    --line-2:    #cfd1cc;
 
-    --accent: #8f9bd8;      /* periwinkle — primary actions */
-    --accent-soft: #2a3157;
-    --sage: #7fb8a6;        /* positive / complete */
-    --amber: #d3a077;       /* incomplete / late, never alarming */
-    --danger: #d88f8f;
+    --accent:      #4d5aa8;
+    --accent-ink:  #ffffff;
+    --accent-soft: #eceef8;
+    --sage:        #2f7360;
+    --sage-soft:   #e6f0ec;
+    --warn:        #9a6634;
+    --warn-soft:   #f6eee4;
+    --danger:      #a33f3f;
 
-    --surface: rgba(255, 255, 255, .045);
-    --surface-2: rgba(255, 255, 255, .025);
-    --line: rgba(255, 255, 255, .09);
-    --line-strong: rgba(255, 255, 255, .18);
+    --shadow-1: 0 1px 2px rgba(20, 24, 28, .05);
+    --shadow-2: 0 8px 28px -18px rgba(20, 24, 28, .35);
 
-    --r: 16px;
     --r-sm: 10px;
+    --r:    14px;
+    --r-lg: 20px;
 
     --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    --serif: Georgia, "Iowan Old Style", "Times New Roman", serif;
+    --serif: "Iowan Old Style", Georgia, "Times New Roman", serif;
+
+    --s1: .25rem; --s2: .5rem; --s3: .75rem; --s4: 1rem;
+    --s5: 1.5rem; --s6: 2rem; --s7: 3rem;
+
+    --nav-h: 60px;
   }
 
+  :root:not([data-theme="light"]) {
+    color-scheme: light;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg:        #0f1216;
+      --surface:   #171b21;
+      --surface-2: #1d222a;
+      --ink:       #eceef1;
+      --ink-2:     #a4acb6;
+      --ink-3:     #767e89;
+      --line:      #252b34;
+      --line-2:    #333b46;
+
+      --accent:      #9aa4ea;
+      --accent-ink:  #14161f;
+      --accent-soft: #212639;
+      --sage:        #7cbba6;
+      --sage-soft:   #1a2a26;
+      --warn:        #d3a077;
+      --warn-soft:   #2a2119;
+      --danger:      #e08b8b;
+
+      --shadow-1: 0 1px 2px rgba(0, 0, 0, .3);
+      --shadow-2: 0 8px 28px -18px rgba(0, 0, 0, .8);
+      color-scheme: dark;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg:        #0f1216;
+    --surface:   #171b21;
+    --surface-2: #1d222a;
+    --ink:       #eceef1;
+    --ink-2:     #a4acb6;
+    --ink-3:     #767e89;
+    --line:      #252b34;
+    --line-2:    #333b46;
+
+    --accent:      #9aa4ea;
+    --accent-ink:  #14161f;
+    --accent-soft: #212639;
+    --sage:        #7cbba6;
+    --sage-soft:   #1a2a26;
+    --warn:        #d3a077;
+    --warn-soft:   #2a2119;
+    --danger:      #e08b8b;
+
+    --shadow-1: 0 1px 2px rgba(0, 0, 0, .3);
+    --shadow-2: 0 8px 28px -18px rgba(0, 0, 0, .8);
+    color-scheme: dark;
+  }
+
+  /* ---------- base ---------- */
   * { box-sizing: border-box; }
+
+  html { -webkit-text-size-adjust: 100%; }
 
   body {
     margin: 0;
     min-height: 100vh;
-    background:
-      radial-gradient(80vw 60vh at 15% -10%, #1b2140 0%, transparent 62%),
-      radial-gradient(70vw 50vh at 95% 8%, #17263a 0%, transparent 60%),
-      var(--bg);
-    background-attachment: fixed;
+    background: var(--bg);
     color: var(--ink);
     font-family: var(--sans);
     font-size: 16px;
-    line-height: 1.65;
+    line-height: 1.55;
     -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
   }
 
-  .wrap { max-width: 680px; margin: 0 auto; padding: 0 1.25rem 6rem; }
+  h1, h2, h3, h4 { margin: 0; font-weight: 600; letter-spacing: -.02em; line-height: 1.2; }
+  h1 { font-size: clamp(1.75rem, 5vw, 2.25rem); }
+  h2 { font-size: clamp(1.3rem, 3.6vw, 1.6rem); }
+  h3 { font-size: 1.05rem; }
+  p  { margin: 0; }
 
-  h1, h2, h3 { font-weight: 600; letter-spacing: -.015em; margin: 0; }
+  a { color: var(--accent); }
 
-  button { font: inherit; cursor: pointer; border: 0; border-radius: var(--r-sm); transition: background .18s ease, border-color .18s ease, color .18s ease, opacity .18s ease; }
-  button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .t-lead  { color: var(--ink-2); font-size: 1.02rem; }
+  .t-small { color: var(--ink-2); font-size: .9rem; }
+  .t-fine  { color: var(--ink-3); font-size: .82rem; }
+  .t-eyebrow {
+    font-size: .72rem; font-weight: 600; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--ink-3);
+  }
+  .t-num { font-variant-numeric: tabular-nums; }
 
-  input[type="text"], input[type="password"], input[type="date"], textarea {
+  /* ---------- controls ---------- */
+  button { font: inherit; cursor: pointer; border: 0; background: none; color: inherit; border-radius: var(--r-sm); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: var(--s2);
+    min-height: 46px; padding: 0 var(--s5);
+    font-size: .97rem; font-weight: 600;
+    border-radius: var(--r-sm);
+    transition: background .15s ease, border-color .15s ease, opacity .15s ease;
+  }
+  .btn-primary { background: var(--accent); color: var(--accent-ink); width: 100%; }
+  .btn-primary:hover:not(:disabled) { opacity: .9; }
+  .btn-primary:disabled { opacity: .5; cursor: default; }
+  .btn-secondary { background: var(--surface); color: var(--ink); border: 1px solid var(--line-2); }
+  .btn-secondary:hover { background: var(--surface-2); }
+  .btn-ghost { color: var(--ink-2); min-height: 40px; padding: 0 var(--s3); font-weight: 500; }
+  .btn-ghost:hover { color: var(--ink); background: var(--surface-2); }
+  .btn-danger { color: var(--danger); }
+  .btn-sm { min-height: 36px; padding: 0 var(--s3); font-size: .88rem; }
+
+  input[type="text"], input[type="password"], input[type="date"], input[type="time"], input[type="search"], textarea, select {
     width: 100%;
-    padding: .8rem .95rem;
+    min-height: 46px;
+    padding: var(--s3);
     font: inherit;
     color: var(--ink);
     background: var(--surface);
-    border: 1px solid var(--line);
+    border: 1px solid var(--line-2);
     border-radius: var(--r-sm);
+    transition: border-color .15s ease;
   }
-  input::placeholder, textarea::placeholder { color: var(--ink-faint); }
+  input:focus, textarea:focus, select:focus { border-color: var(--accent); }
+  input::placeholder, textarea::placeholder { color: var(--ink-3); }
+  textarea { min-height: 92px; resize: vertical; font-family: var(--serif); font-size: 1rem; line-height: 1.6; }
+  label { display: block; }
 
-  .btn-primary {
-    padding: .85rem 1.5rem;
-    font-weight: 600;
-    color: #10142a;
-    background: var(--accent);
+  .field { margin-bottom: var(--s4); }
+  .field > label { font-size: .88rem; font-weight: 500; color: var(--ink-2); margin-bottom: var(--s2); }
+  .field-hint { margin-top: var(--s2); }
+  .pw-wrap { position: relative; }
+  .pw-wrap input { padding-right: 4.2rem; }
+  .pw-toggle {
+    position: absolute; right: var(--s2); top: 50%; transform: translateY(-50%);
+    min-height: 34px; padding: 0 var(--s2); font-size: .82rem; font-weight: 600; color: var(--ink-2);
   }
-  .btn-primary:hover { background: #a3aee2; }
-  .btn-primary:disabled { opacity: .45; cursor: default; }
+  .pw-toggle:hover { color: var(--ink); }
 
-  .btn-quiet {
-    padding: .6rem 1rem;
-    color: var(--ink-soft);
+  /* ---------- layout ---------- */
+  .shell { max-width: 640px; margin: 0 auto; padding: 0 var(--s4); }
+
+  .topbar {
+    position: sticky; top: 0; z-index: 20;
+    background: var(--bg);
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--line);
+  }
+  .topbar-inner {
+    max-width: 640px; margin: 0 auto; padding: var(--s3) var(--s4);
+    display: flex; align-items: center; justify-content: space-between; gap: var(--s4);
+  }
+  .wordmark { font-size: 1.05rem; font-weight: 600; letter-spacing: -.01em; }
+
+  .nav-desktop { display: none; gap: var(--s1); }
+  .nav-desktop button { padding: var(--s2) var(--s3); color: var(--ink-3); font-size: .93rem; font-weight: 500; }
+  .nav-desktop button:hover { color: var(--ink-2); }
+  .nav-desktop button[aria-current="page"] { color: var(--ink); background: var(--surface-2); }
+
+  main { padding: var(--s5) 0 calc(var(--nav-h) + 3rem); }
+
+  /* mobile tab bar: thumb-reachable, one-handed */
+  .tabbar {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
+    display: flex;
+    background: var(--surface);
+    background: color-mix(in srgb, var(--surface) 92%, transparent);
+    backdrop-filter: blur(14px);
+    border-top: 1px solid var(--line);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .tabbar button {
+    flex: 1; min-height: var(--nav-h);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+    color: var(--ink-3); font-size: .7rem; font-weight: 500; border-radius: 0;
+  }
+  .tabbar button[aria-current="page"] { color: var(--accent); }
+  .tabbar svg { width: 21px; height: 21px; }
+
+  @media (min-width: 720px) {
+    .nav-desktop { display: flex; }
+    .tabbar { display: none; }
+    main { padding-bottom: var(--s7); }
+    .shell { padding: 0 var(--s5); }
+  }
+
+  /* ---------- surfaces ---------- */
+  .card {
     background: var(--surface);
     border: 1px solid var(--line);
-  }
-  .btn-quiet:hover { color: var(--ink); border-color: var(--line-strong); }
-
-  .btn-link {
-    padding: .2rem 0;
-    color: var(--ink-faint);
-    background: none;
-    text-decoration: underline;
-    text-underline-offset: 3px;
-  }
-  .btn-link:hover { color: var(--ink-soft); }
-
-  .muted { color: var(--ink-soft); }
-  .faint { color: var(--ink-faint); font-size: .88rem; }
-
-  /* ---------- auth ---------- */
-  #auth { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 2rem 1.25rem; }
-  /* An id selector beats the browser default [hidden]{display:none}, so the
-     hidden attribute needs to be honoured explicitly on these two screens. */
-  #auth[hidden], #app[hidden] { display: none; }
-  .auth-card { width: 100%; max-width: 380px; }
-  .brand { font-size: 2.6rem; letter-spacing: -.03em; margin-bottom: .2rem; }
-  .brand-sub { color: var(--ink-faint); margin: 0 0 2.2rem; font-family: var(--serif); font-style: italic; }
-  .field { margin-bottom: .9rem; }
-  .field label { display: block; font-size: .85rem; color: var(--ink-soft); margin-bottom: .35rem; }
-  .auth-actions { display: flex; flex-direction: column; gap: .8rem; margin-top: 1.4rem; }
-  .auth-toggle { text-align: center; }
-  .remember { display: flex; align-items: center; gap: .55rem; color: var(--ink-soft); font-size: .9rem; margin-top: .3rem; }
-  .remember input { accent-color: var(--accent); width: 16px; height: 16px; }
-
-  /* ---------- app chrome ---------- */
-  header.bar {
-    display: flex; align-items: center; justify-content: space-between;
-    gap: 1rem; padding: 1.4rem 0 1.2rem; border-bottom: 1px solid var(--line); margin-bottom: 2rem;
-  }
-  header.bar .name { font-size: 1.25rem; letter-spacing: -.02em; }
-  nav { display: flex; gap: .3rem; }
-  nav button { padding: .45rem .8rem; color: var(--ink-faint); background: none; font-size: .92rem; }
-  nav button:hover { color: var(--ink-soft); }
-  nav button.on { color: var(--ink); background: var(--surface); }
-
-  /* ---------- cards & sections ---------- */
-  .panel {
-    padding: 1.6rem;
-    background: linear-gradient(180deg, var(--surface), var(--surface-2));
-    border: 1px solid var(--line);
     border-radius: var(--r);
+    box-shadow: var(--shadow-1);
   }
-  .panel + .panel { margin-top: 1rem; }
+  .pad { padding: var(--s5); }
+  .stack > * + * { margin-top: var(--s4); }
+  .stack-lg > * + * { margin-top: var(--s6); }
+  .row { display: flex; align-items: center; gap: var(--s3); }
+  .row-between { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); }
+  .divider { height: 1px; background: var(--line); border: 0; margin: 0; }
+  .section-head { margin-bottom: var(--s3); }
 
-  .eyebrow { font-size: .76rem; letter-spacing: .18em; text-transform: uppercase; color: var(--ink-faint); margin: 0 0 .5rem; }
-  .lede { font-family: var(--serif); font-size: 1.15rem; color: var(--ink-soft); margin: .4rem 0 0; }
-
-  /* ---------- tags ---------- */
-  .tags { display: flex; flex-wrap: wrap; gap: .5rem; margin: 1rem 0 0; }
-  .tag {
-    padding: .5rem .85rem; font-size: .92rem; color: var(--ink-soft);
-    background: var(--surface); border: 1px solid var(--line); border-radius: 999px;
+  /* ---------- energy scale ---------- */
+  .energy-grid {
+    display: grid; grid-template-columns: repeat(10, 1fr); gap: 6px;
   }
-  .tag:hover { border-color: var(--line-strong); color: var(--ink); }
-  .tag.on { color: #10142a; background: var(--accent); border-color: var(--accent); font-weight: 600; }
-  .tag-static { padding: .32rem .7rem; font-size: .82rem; color: var(--ink-soft); background: var(--accent-soft); border-radius: 999px; display: inline-block; }
-
-  .add-tag { display: flex; gap: .5rem; margin-top: .9rem; }
-  .add-tag input { flex: 1; }
-
-  /* ---------- sliders ---------- */
-  .slider-row { margin: 1.8rem 0; }
-  .slider-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: .5rem; }
-  .slider-head .val { font-size: 1.6rem; font-weight: 600; color: var(--accent); font-variant-numeric: tabular-nums; }
-  input[type="range"] { width: 100%; accent-color: var(--accent); height: 26px; }
-  .scale { display: flex; justify-content: space-between; font-size: .78rem; color: var(--ink-faint); }
-
-  .toggle-row {
-    display: flex; align-items: center; justify-content: space-between; gap: 1rem;
-    padding: 1rem 1.1rem; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-sm);
+  .energy-grid button {
+    aspect-ratio: 1 / 1; min-height: 40px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .92rem; font-weight: 600;
+    color: var(--ink-2);
+    background: var(--surface-2);
+    border: 1px solid transparent;
+    border-radius: var(--r-sm);
+    transition: background .12s ease, color .12s ease, transform .12s ease;
   }
-  .switch { position: relative; width: 48px; height: 28px; flex: none; }
-  .switch input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
-  .switch span { position: absolute; inset: 0; background: var(--surface); border: 1px solid var(--line-strong); border-radius: 999px; transition: background .2s ease; pointer-events: none; }
-  .switch span::after { content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: var(--ink-faint); transition: transform .2s ease, background .2s ease; }
-  .switch input:checked + span { background: var(--accent-soft); border-color: var(--accent); }
-  .switch input:checked + span::after { transform: translateX(20px); background: var(--accent); }
-  .switch input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .energy-grid button:hover { border-color: var(--line-2); }
+  .energy-grid button[aria-pressed="true"] {
+    background: var(--accent); color: var(--accent-ink); transform: scale(1.04);
+  }
+  .energy-grid button.filled { background: var(--accent-soft); color: var(--accent); }
+  .scale-ends { display: flex; justify-content: space-between; margin-top: var(--s2); }
 
-  /* ---------- journal ---------- */
-  .entry { padding: 1.4rem 1.5rem; background: linear-gradient(180deg, var(--surface), var(--surface-2)); border: 1px solid var(--line); border-radius: var(--r); margin-bottom: .9rem; }
-  .entry.incomplete { border-left: 2px solid var(--amber); }
-  .entry-date { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: .8rem; }
-  .entry-date h3 { font-size: 1rem; font-weight: 600; }
-  .note { font-family: var(--serif); font-size: 1.05rem; color: var(--ink-soft); margin: .9rem 0 0; }
-  .sleep-line { display: flex; flex-wrap: wrap; gap: 1.4rem; margin-top: 1.1rem; padding-top: 1rem; border-top: 1px solid var(--line); }
-  .metric .k { font-size: .76rem; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint); }
-  .metric .v { font-size: 1.3rem; font-weight: 600; font-variant-numeric: tabular-nums; }
-  .pill { font-size: .74rem; letter-spacing: .1em; text-transform: uppercase; padding: .2rem .6rem; border-radius: 999px; }
-  .pill.wait { color: var(--amber); background: rgba(211, 160, 119, .12); }
-  .pill.late { color: var(--ink-faint); background: var(--surface); }
+  /* ---------- habit rows ---------- */
+  .habit {
+    display: flex; align-items: center; gap: var(--s3);
+    width: 100%; min-height: 54px; padding: var(--s3);
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--r);
+    text-align: left; font-size: 1rem; color: var(--ink);
+    transition: border-color .15s ease, background .15s ease;
+  }
+  .habit + .habit { margin-top: var(--s2); }
+  .habit:hover { border-color: var(--line-2); }
+  .habit[aria-pressed="true"] { background: var(--sage-soft); border-color: transparent; }
+  .habit .box {
+    flex: none; width: 22px; height: 22px; border-radius: 7px;
+    border: 1.5px solid var(--line-2); display: flex; align-items: center; justify-content: center;
+  }
+  .habit[aria-pressed="true"] .box { background: var(--sage); border-color: var(--sage); }
+  .habit .box svg { width: 13px; height: 13px; opacity: 0; }
+  .habit[aria-pressed="true"] .box svg { opacity: 1; }
+  .habit .label { flex: 1; }
 
-  /* ---------- insights ---------- */
-  .pattern { padding: 1.3rem 1.4rem; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); margin-bottom: .8rem; }
-  .pattern h4 { margin: 0 0 .5rem; font-size: 1.05rem; font-weight: 600; line-height: 1.45; }
-  .pattern .ev { color: var(--ink-soft); font-size: .95rem; margin: 0; }
-  .conf { display: inline-block; margin-top: .8rem; font-size: .74rem; letter-spacing: .1em; text-transform: uppercase; padding: .2rem .6rem; border-radius: 999px; }
-  .conf.high { color: var(--sage); background: rgba(127, 184, 166, .13); }
-  .conf.medium { color: var(--accent); background: var(--accent-soft); }
-  .conf.low { color: var(--ink-faint); background: var(--surface); }
+  /* ---------- calendar ---------- */
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .cal-head { font-size: .68rem; color: var(--ink-3); text-align: center; padding-bottom: var(--s2); }
+  .cal-day {
+    aspect-ratio: 1 / 1; min-height: 38px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+    border-radius: var(--r-sm); font-size: .82rem; color: var(--ink-2);
+    background: transparent; border: 1px solid transparent;
+  }
+  .cal-day:hover:not(:disabled) { background: var(--surface-2); }
+  .cal-day:disabled { color: var(--ink-3); opacity: .4; cursor: default; }
+  .cal-day.has-data { background: var(--surface); border-color: var(--line); color: var(--ink); font-weight: 500; }
+  .cal-day.is-today { border-color: var(--accent); }
+  .cal-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--line-2); }
+  .cal-dot.complete { background: var(--sage); }
+  .cal-dot.partial { background: var(--warn); }
 
-  .progress-track { height: 4px; background: var(--surface); border-radius: 999px; overflow: hidden; margin: 1rem 0 .5rem; }
-  .progress-fill { height: 100%; background: var(--accent); border-radius: 999px; transition: width .4s ease; }
+  /* ---------- misc ---------- */
+  .chip {
+    display: inline-block; padding: 4px 10px; border-radius: 999px;
+    font-size: .82rem; color: var(--ink-2); background: var(--surface-2);
+  }
+  .chip-accent { background: var(--accent-soft); color: var(--accent); }
+  .pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 9px; border-radius: 999px; font-size: .72rem; font-weight: 600;
+    letter-spacing: .04em; text-transform: uppercase;
+  }
+  .pill-wait { background: var(--warn-soft); color: var(--warn); }
+  .pill-late { background: var(--surface-2); color: var(--ink-3); }
+  .pill-done { background: var(--sage-soft); color: var(--sage); }
 
-  /* ---------- banners ---------- */
-  .banner { padding: .9rem 1.1rem; border-radius: var(--r-sm); margin-bottom: 1.2rem; font-size: .92rem; }
-  .banner.error { color: #ffd9d9; background: rgba(216, 143, 143, .12); border: 1px solid rgba(216, 143, 143, .35); }
-  .banner.info { color: var(--ink-soft); background: var(--surface); border: 1px solid var(--line); }
-  .banner[hidden] { display: none; }
+  .metric-row { display: flex; flex-wrap: wrap; gap: var(--s5); }
+  .metric .k { font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+  .metric .v { font-size: 1.5rem; font-weight: 600; }
 
-  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--accent-soft); border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; vertical-align: -2px; margin-right: .5rem; }
+  .note-text { font-family: var(--serif); font-size: 1.02rem; line-height: 1.6; color: var(--ink-2); }
+
+  .banner { padding: var(--s3) var(--s4); border-radius: var(--r-sm); font-size: .92rem; }
+  .banner-error { background: var(--surface); background: color-mix(in srgb, var(--danger) 12%, var(--surface)); color: var(--danger); border: 1px solid var(--line-2); border-color: color-mix(in srgb, var(--danger) 28%, transparent); }
+  .banner-ok { background: var(--sage-soft); color: var(--sage); }
+  .banner-info { background: var(--surface-2); color: var(--ink-2); }
+  [hidden] { display: none !important; }
+
+  .skip-link {
+    position: absolute; left: -9999px; top: 0; z-index: 100;
+    padding: var(--s3) var(--s4); background: var(--surface); color: var(--ink);
+    border: 1px solid var(--line-2); border-radius: var(--r-sm);
+  }
+  .skip-link:focus { left: var(--s4); top: var(--s3); }
+
+  .empty { text-align: center; padding: var(--s7) var(--s4); }
+  .empty h3 { margin-bottom: var(--s2); }
+
+  .skeleton {
+    background: linear-gradient(90deg, var(--surface-2) 25%, var(--line) 50%, var(--surface-2) 75%);
+    background-size: 200% 100%; border-radius: var(--r-sm);
+    animation: shimmer 1.4s infinite;
+  }
+  @keyframes shimmer { to { background-position: -200% 0; } }
+  .spinner {
+    width: 15px; height: 15px; flex: none;
+    border: 2px solid var(--line-2); border-top-color: var(--accent);
+    border-radius: 50%; animation: spin .7s linear infinite;
+  }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  .row { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; }
-  .between { display: flex; flex-wrap: wrap; gap: .8rem; align-items: center; justify-content: space-between; }
-  .stack > * + * { margin-top: 1rem; }
-  .mt2 { margin-top: 2rem; }
+  .toast {
+    position: fixed; left: 50%; bottom: calc(var(--nav-h) + 1rem); transform: translateX(-50%);
+    z-index: 50; padding: var(--s3) var(--s5); border-radius: 999px;
+    background: var(--ink); color: var(--bg); font-size: .9rem; font-weight: 500;
+    box-shadow: var(--shadow-2); opacity: 0; pointer-events: none;
+    transition: opacity .2s ease, transform .2s ease;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(-6px); }
+  @media (min-width: 720px) { .toast { bottom: 1.5rem; } }
 
-  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+  /* ---------- auth / landing ---------- */
+  .landing { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; padding: var(--s6) var(--s4) var(--s7); }
+  .landing-inner { width: 100%; max-width: 400px; margin: 0 auto; }
+  .landing h1 { font-size: clamp(2rem, 8vw, 2.6rem); }
+  .value-list { list-style: none; padding: 0; margin: var(--s5) 0 0; }
+  .value-list li { display: flex; gap: var(--s3); align-items: flex-start; padding: var(--s2) 0; color: var(--ink-2); }
+  .value-list .n { color: var(--accent); font-weight: 600; font-size: .8rem; padding-top: 2px; min-width: 1.4rem; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+  }
 </style>
 </head>
 <body>
 
-<!-- ============================= AUTH ============================= -->
-<div id="auth">
-  <div class="auth-card">
-    <h1 class="brand">Sustain</h1>
-    <p class="brand-sub">Your habit and energy journal.</p>
-
-    <div class="banner error" id="auth-error" hidden></div>
-
-    <form id="auth-form">
-      <div class="field">
-        <label for="username">Username</label>
-        <input type="text" id="username" name="username" autocomplete="username" autocapitalize="none" spellcheck="false">
+<!-- ===================== LANDING / AUTH ===================== -->
+<div id="landing" class="landing">
+  <div class="landing-inner">
+    <div id="landing-intro">
+      <h1>Sustain</h1>
+      <p class="t-lead" style="margin-top:.5rem">Discover what makes you feel your best.</p>
+      <ul class="value-list">
+        <li><span class="n">01</span><span>Track the habits that shape your day.</span></li>
+        <li><span class="n">02</span><span>Log your energy the next morning.</span></li>
+        <li><span class="n">03</span><span>Discover the patterns in your own data.</span></li>
+      </ul>
+      <div style="margin-top:2rem" class="stack">
+        <button class="btn btn-primary" id="cta-signup">Get started</button>
+        <button class="btn btn-secondary" id="cta-signin" style="width:100%">I already have an account</button>
       </div>
-      <div class="field">
-        <label for="password">Password</label>
-        <input type="password" id="password" name="password" autocomplete="current-password" minlength="4">
-      </div>
-      <label class="remember">
-        <input type="checkbox" id="remember" checked>
-        Keep me signed in on this device
-      </label>
-      <div class="auth-actions">
-        <button type="submit" class="btn-primary" id="auth-submit">Sign in</button>
-        <div class="auth-toggle">
-          <button type="button" class="btn-link" id="auth-switch">New here? Create an account</button>
+      <p class="t-fine" style="margin-top:1.5rem;text-align:center">Build a life you can sustain.</p>
+    </div>
+
+    <form id="auth-form" hidden novalidate>
+      <button type="button" class="btn btn-ghost" id="auth-back" style="margin-left:-.75rem">&larr; Back</button>
+      <h2 id="auth-title" style="margin-top:.5rem">Create your account</h2>
+      <p class="t-small" id="auth-sub" style="margin-top:.35rem">Your journal stays on this device.</p>
+
+      <div class="banner banner-error" id="auth-error" hidden role="alert"></div>
+
+      <div style="margin-top:1.5rem">
+        <div class="field">
+          <label for="username">Username</label>
+          <input type="text" id="username" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" required>
         </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <div class="pw-wrap">
+            <input type="password" id="password" name="password" autocomplete="current-password" required>
+            <button type="button" class="pw-toggle" id="pw-toggle" aria-label="Show password">Show</button>
+          </div>
+          <p class="t-fine field-hint" id="pw-hint" hidden>At least 8 characters.</p>
+        </div>
+        <label class="row" style="gap:.6rem;color:var(--ink-2);font-size:.9rem">
+          <input type="checkbox" id="remember" checked style="width:18px;height:18px;min-height:0;accent-color:var(--accent)">
+          Keep me signed in on this device
+        </label>
+        <button type="submit" class="btn btn-primary" id="auth-submit" style="margin-top:1.5rem">Create account</button>
       </div>
     </form>
   </div>
 </div>
 
-<!-- ============================= APP ============================= -->
+<!-- ===================== APP ===================== -->
+<a href="#view" class="skip-link">Skip to content</a>
 <div id="app" hidden>
-  <div class="wrap">
-    <header class="bar">
-      <div class="name">Sustain</div>
-      <nav>
-        <button data-view="home" class="on">Today</button>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <span class="wordmark">Sustain</span>
+      <nav class="nav-desktop" aria-label="Main">
+        <button data-view="today">Today</button>
         <button data-view="journal">Journal</button>
         <button data-view="insights">Insights</button>
       </nav>
-      <button class="btn-link" id="signout">Sign out</button>
-    </header>
+      <button class="btn btn-ghost btn-sm" data-view="settings" aria-label="Settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" width="20" height="20" aria-hidden="true">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1A1.7 1.7 0 0 0 8.9 19a1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 5 8.9a1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9.5a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9v.1a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>
+        </svg>
+      </button>
+    </div>
+  </header>
 
-    <div class="banner error" id="app-error" hidden></div>
-    <div id="view"></div>
-  </div>
+  <main id="view-main">
+    <div class="shell">
+      <div class="banner banner-error" id="app-error" hidden role="alert" style="margin-bottom:1rem"></div>
+      <div id="view"></div>
+    </div>
+  </main>
+
+  <nav class="tabbar" aria-label="Main">
+    <button data-view="today">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4"/></svg>
+      Today
+    </button>
+    <button data-view="journal">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H19v18H6.5A2.5 2.5 0 0 1 4 18.5z"/><path d="M8 7h7M8 11h7"/></svg>
+      Journal
+    </button>
+    <button data-view="insights">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M3 17l5-6 4 3.5L21 6"/><path d="M3 21h18"/></svg>
+      Insights
+    </button>
+  </nav>
 </div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
 /* =====================================================================
-   Sustain — a two-touchpoint sleep and energy journal.
+   Sustain — habit and energy journal.
 
-   One record per night. The evening half and the morning half live in the
-   SAME record so that "what I did" and "how I slept after it" are already
-   paired before any analysis happens.
+   ONE RECORD PER NIGHT. The evening half (what you did) and the morning
+   half (how you slept, how much energy you have) live in the SAME record,
+   so "what I did" and "how I felt after it" are paired before any analysis
+   happens. That pairing is the product, and it is why this is not a
+   same-day habit checklist.
+
+   Storage keys and record shape are unchanged from v1: existing journals
+   keep working untouched.
    ===================================================================== */
 
 /* ---------------------------------------------------------------------
-   STORAGE — why localStorage and not IndexedDB
-   One record per night is roughly 200 bytes. Ten years of nightly logging
-   is under 1 MB, comfortably inside the ~5 MB localStorage quota. IndexedDB
-   buys asynchronous access and unbounded size; at this scale it would only
-   add an async layer around data small enough to read synchronously in
-   under a millisecond. The cost of localStorage — it blocks the main thread
-   — is irrelevant for kilobytes.
-
-   Every read and write is wrapped: a browser in private mode, or with
-   storage disabled, throws on access rather than returning null.
+   STORAGE
+   localStorage, not IndexedDB: a night is ~200 bytes, so a decade of
+   logging sits far inside the ~5MB quota, and synchronous reads keep the
+   Today screen instant. Every access is wrapped — private mode throws on
+   contact rather than returning null.
    --------------------------------------------------------------------- */
 var K_USERS = 'sustain.users';
 var K_SESSION = 'sustain.session';
-var K_DATA = 'sustain.data.';   // + userId
+var K_DATA = 'sustain.data.';
+var K_THEME = 'sustain.theme';
 
 function readJSON(key, fallback) {
   try {
@@ -297,33 +517,38 @@ function readJSON(key, fallback) {
     var val = JSON.parse(raw);
     return val === null || val === undefined ? fallback : val;
   } catch (err) {
-    showError('Could not read saved data: ' + err.message);
+    showError('Your saved data could not be read on this device.');
     return fallback;
   }
 }
-
 function writeJSON(key, value) {
-  try {
-    localStorage.setItem(key, JSON.stringify(value));
-    return true;
-  } catch (err) {
-    showError('Could not save. Your last change may be lost. (' + err.message + ')');
+  try { localStorage.setItem(key, JSON.stringify(value)); return true; }
+  catch (err) {
+    showError(err && err.name === 'QuotaExceededError'
+      ? 'This browser is out of storage space, so your last change was not saved.'
+      : 'Your last change could not be saved on this device.');
     return false;
   }
 }
 
 /* ---------------------------------------------------------------------
+   THEME — light, dark, or follow the system
+   --------------------------------------------------------------------- */
+function applyTheme(pref) {
+  if (pref === 'light' || pref === 'dark') document.documentElement.setAttribute('data-theme', pref);
+  else document.documentElement.removeAttribute('data-theme');
+}
+function currentTheme() { return readJSON(K_THEME, 'system'); }
+applyTheme(currentTheme());
+
+/* ---------------------------------------------------------------------
    ACCOUNTS
 
-   Honest scope: these accounts separate people sharing one browser. They
-   are not real security. Everything lives in this browser, so anyone with
-   access to the device and developer tools can read the journal regardless
-   of the password. Real accounts need a server.
-
-   What is done properly: the password itself is never stored. A random
-   salt plus 150k rounds of PBKDF2-SHA256 produce a hash, and only the salt
-   and hash are written to disk. "Keep me signed in" stores the user id, not
-   the password — which is what staying signed in actually requires.
+   Honest scope: these separate people sharing one browser. They are not
+   real security — all data is in this browser, so anyone with the device
+   and developer tools can read it regardless of the password. Real
+   isolation needs a server. What is done properly: the password itself is
+   never stored, only a random salt and 150k rounds of PBKDF2-SHA256.
    --------------------------------------------------------------------- */
 var PBKDF2_ROUNDS = 150000;
 var cryptoOK = !!(window.crypto && window.crypto.subtle);
@@ -333,16 +558,12 @@ function toHex(buf) {
     return ('00' + b.toString(16)).slice(-2);
   }).join('');
 }
-
 function randomSalt() {
   if (cryptoOK) return toHex(window.crypto.getRandomValues(new Uint8Array(16)));
   return String(Date.now()) + Math.random().toString(36).slice(2);
 }
-
 function hashPassword(password, salt) {
   if (!cryptoOK) {
-    // Fallback for contexts without Web Crypto (some file:// setups).
-    // Weak by design-of-last-resort; the UI says so when this path is used.
     var h = 0, s = salt + password;
     for (var i = 0; i < s.length; i++) { h = (h * 31 + s.charCodeAt(i)) | 0; }
     return Promise.resolve('weak:' + (h >>> 0).toString(16));
@@ -352,121 +573,155 @@ function hashPassword(password, salt) {
     .importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveBits'])
     .then(function (key) {
       return window.crypto.subtle.deriveBits(
-        { name: 'PBKDF2', salt: enc.encode(salt), iterations: PBKDF2_ROUNDS, hash: 'SHA-256' },
-        key, 256
-      );
+        { name: 'PBKDF2', salt: enc.encode(salt), iterations: PBKDF2_ROUNDS, hash: 'SHA-256' }, key, 256);
     })
     .then(toHex);
 }
-
 function getUsers() { return readJSON(K_USERS, []); }
-
-function findUser(username) {
-  var name = username.trim().toLowerCase();
-  return getUsers().filter(function (u) { return u.username.toLowerCase() === name; })[0] || null;
+function findUser(name) {
+  var n = String(name).trim().toLowerCase();
+  return getUsers().filter(function (u) { return u.username.toLowerCase() === n; })[0] || null;
 }
-
 function signUp(username, password) {
-  if (findUser(username)) return Promise.reject(new Error('That username is taken.'));
+  if (findUser(username)) return Promise.reject(new Error('That username is already used on this device.'));
   var salt = randomSalt();
   return hashPassword(password, salt).then(function (hash) {
-    var user = { id: 'u' + Date.now().toString(36), username: username.trim(), salt: salt, hash: hash };
-    var users = getUsers();
-    users.push(user);
-    writeJSON(K_USERS, users);
+    var user = { id: 'u' + Date.now().toString(36), username: String(username).trim(), salt: salt, hash: hash };
+    var users = getUsers(); users.push(user); writeJSON(K_USERS, users);
     return user;
   });
 }
-
 function signIn(username, password) {
   var user = findUser(username);
-  if (!user) return Promise.reject(new Error('No account with that username.'));
+  if (!user) return Promise.reject(new Error('No account with that username on this device.'));
   return hashPassword(password, user.salt).then(function (hash) {
-    if (hash !== user.hash) throw new Error('Incorrect password.');
+    if (hash !== user.hash) throw new Error('That password does not match.');
     return user;
   });
 }
 
 /* ---------------------------------------------------------------------
-   DATES
-   A "night" is keyed by the date of its EVENING. A morning entry logged on
-   the 25th attaches to the record dated the 24th.
+   DATES — a night is keyed by the date of its EVENING
    --------------------------------------------------------------------- */
 function isoDate(d) {
   return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 }
+function parseISO(iso) {
+  var p = String(iso).split('-');
+  return new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
+}
 function shiftDate(iso, days) {
-  var p = iso.split('-');
-  var d = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
-  d.setDate(d.getDate() + days);
-  return isoDate(d);
+  var d = parseISO(iso); d.setDate(d.getDate() + days); return isoDate(d);
 }
-function prettyDate(iso) {
-  var p = iso.split('-');
-  var d = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
-  var today = isoDate(new Date());
-  if (iso === today) return 'Tonight';
-  if (iso === shiftDate(today, -1)) return 'Last night';
-  return d.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
+function today() { return isoDate(new Date()); }
+function prettyDate(iso, opts) {
+  if (iso === today()) return 'Tonight';
+  if (iso === shiftDate(today(), -1)) return 'Last night';
+  return parseISO(iso).toLocaleDateString(undefined, opts || { weekday: 'long', month: 'long', day: 'numeric' });
 }
-
-/* The morning window closes at noon the day after the evening entry.
-   Anything logged later is kept but marked lateEntry — recalled ratings
-   are weaker evidence, and the AI prompt is told so explicitly. */
 function isLate(nightDate, when) {
-  var p = shiftDate(nightDate, 1).split('-');
-  var deadline = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]), 12, 0, 0);
-  return when > deadline;
+  var d = parseISO(shiftDate(nightDate, 1));
+  d.setHours(12, 0, 0, 0);
+  return when > d;
 }
+function daysBetween(a, b) { return Math.round((parseISO(b) - parseISO(a)) / 86400000); }
 
 /* ---------------------------------------------------------------------
-   APP STATE
+   HABITS
+   v1 stored preset tag ids plus a customTags list. Habits are the same
+   ids with order, archiving and editable labels layered on, so every
+   historical record keeps resolving.
    --------------------------------------------------------------------- */
-var PRESET_TAGS = [
-  { id: 'caffeine_late', label: 'caffeine after 2pm' },
-  { id: 'screens_before_bed', label: 'screens in the last hour' },
-  { id: 'trained', label: 'trained today' },
-  { id: 'ate_late', label: 'ate late' },
-  { id: 'outside', label: 'spent time outside' },
-  { id: 'stressful_day', label: 'stressful day' },
-  { id: 'alcohol', label: 'alcohol' },
-  { id: 'napped', label: 'napped' }
+var STARTER_HABITS = [
+  { id: 'trained', label: 'Exercise' },
+  { id: 'outside', label: 'Get outside' },
+  { id: 'read', label: 'Read' },
+  { id: 'caffeine_late', label: 'Caffeine after 2pm' },
+  { id: 'screens_before_bed', label: 'Screens before bed' },
+  { id: 'ate_late', label: 'Ate late' },
+  { id: 'stressful_day', label: 'Stressful day' },
+  { id: 'alcohol', label: 'Alcohol' },
+  { id: 'napped', label: 'Napped' },
+  { id: 'meditate', label: 'Meditate' },
+  { id: 'stretch', label: 'Stretch' },
+  { id: 'water', label: 'Drink water' }
+];
+var DEFAULT_ACTIVE = ['trained', 'outside', 'read', 'caffeine_late', 'screens_before_bed'];
+var MAX_ACTIVE = 8;
+
+var DEFAULT_SETTINGS = {
+  onboarded: false,
+  goals: [],
+  remindEvening: '21:00',
+  remindMorning: '07:30',
+  notifications: false,
+  lastExportAt: null
+};
+
+var GOALS = [
+  { id: 'energy', label: 'Energy' },
+  { id: 'sleep', label: 'Sleep' },
+  { id: 'fitness', label: 'Fitness' },
+  { id: 'focus', label: 'Focus' },
+  { id: 'consistency', label: 'Consistency' },
+  { id: 'wellbeing', label: 'Overall wellbeing' }
 ];
 
-var session = null;      // { id, username }
-var records = [];        // night records, unsorted
-var customTags = [];     // [{ id, label }]
-var insights = [];       // saved analyses, newest appended last
-var view = 'home';
-var draft = null;        // in-progress form state
+var session = null, records = [], habits = [], insights = [], settings = null;
+var view = 'today', pending = null, toastTimer = null;
 
 function dataKey() { return K_DATA + session.id; }
 
 function loadData() {
-  var d = readJSON(dataKey(), { records: [], customTags: [], insights: [] });
+  var d = readJSON(dataKey(), null) || {};
   records = Array.isArray(d.records) ? d.records : [];
-  customTags = Array.isArray(d.customTags) ? d.customTags : [];
   insights = Array.isArray(d.insights) ? d.insights : [];
-}
-function saveData() { writeJSON(dataKey(), { records: records, customTags: customTags, insights: insights }); }
+  settings = {};
+  Object.keys(DEFAULT_SETTINGS).forEach(function (k) {
+    settings[k] = d.settings && d.settings[k] !== undefined ? d.settings[k] : DEFAULT_SETTINGS[k];
+  });
 
-function allTags() { return PRESET_TAGS.concat(customTags); }
-function tagLabel(id) {
-  var t = allTags().filter(function (x) { return x.id === id; })[0];
-  return t ? t.label : id.replace(/_/g, ' ');
+  if (Array.isArray(d.habits) && d.habits.length) {
+    habits = d.habits;
+  } else {
+    // Migration from v1: presets + customTags become habits, and anything
+    // already used in a record stays active so history keeps its labels.
+    var used = {};
+    records.forEach(function (r) {
+      if (r.evening && Array.isArray(r.evening.tags)) r.evening.tags.forEach(function (t) { used[t] = true; });
+    });
+    var seen = {};
+    habits = [];
+    STARTER_HABITS.forEach(function (h) {
+      seen[h.id] = true;
+      habits.push({ id: h.id, label: h.label, archived: !(used[h.id] || DEFAULT_ACTIVE.indexOf(h.id) >= 0) });
+    });
+    (d.customTags || []).forEach(function (t) {
+      if (!t || !t.id || seen[t.id]) return;
+      seen[t.id] = true;
+      habits.push({ id: t.id, label: t.label || t.id, archived: false, custom: true });
+    });
+    Object.keys(used).forEach(function (id) {
+      if (seen[id]) return;
+      habits.push({ id: id, label: id.replace(/_/g, ' '), archived: false, custom: true });
+    });
+  }
 }
-function getRecord(date) {
-  return records.filter(function (r) { return r.date === date; })[0] || null;
+function saveData() {
+  return writeJSON(dataKey(), { records: records, habits: habits, insights: insights, settings: settings });
 }
-function sortedRecords() {
-  return records.slice().sort(function (a, b) { return a.date < b.date ? 1 : -1; });
+
+function activeHabits() { return habits.filter(function (h) { return !h.archived; }); }
+function habitLabel(id) {
+  var h = habits.filter(function (x) { return x.id === id; })[0];
+  return h ? h.label : String(id).replace(/_/g, ' ');
 }
-function completeRecords() {
-  return sortedRecords().filter(function (r) { return r.complete; });
-}
+function getRecord(date) { return records.filter(function (r) { return r.date === date; })[0] || null; }
+function sortedRecords() { return records.slice().sort(function (a, b) { return a.date < b.date ? 1 : -1; }); }
+function completeRecords() { return sortedRecords().filter(function (r) { return r.complete; }); }
 
 /* ---------------------------------------------------------------------
-   ERROR BANNERS
+   FEEDBACK
    --------------------------------------------------------------------- */
 function showError(msg) {
   var el = document.getElementById(session ? 'app-error' : 'auth-error');
@@ -476,48 +731,76 @@ function showError(msg) {
 }
 function clearError() {
   ['app-error', 'auth-error'].forEach(function (id) {
-    var el = document.getElementById(id);
-    if (el) el.hidden = true;
+    var el = document.getElementById(id); if (el) el.hidden = true;
+  });
+}
+function toast(msg) {
+  var el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function () { el.classList.remove('show'); }, 2200);
+}
+
+function escapeHtml(s) {
+  return String(s === null || s === undefined ? '' : s).replace(/[&<>"']/g, function (c) {
+    return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c];
   });
 }
 
 /* =====================================================================
-   AUTH SCREEN
+   LANDING + AUTH
    ===================================================================== */
-var authMode = 'signin';
+var authMode = 'signup';
 
-document.getElementById('auth-switch').addEventListener('click', function () {
-  authMode = authMode === 'signin' ? 'signup' : 'signin';
-  document.getElementById('auth-submit').textContent = authMode === 'signin' ? 'Sign in' : 'Create account';
-  this.textContent = authMode === 'signin' ? 'New here? Create an account' : 'Already have an account? Sign in';
-  setPasswordMode();
+function openAuth(mode) {
+  authMode = mode;
+  document.getElementById('landing-intro').hidden = true;
+  var form = document.getElementById('auth-form');
+  form.hidden = false;
+  document.getElementById('auth-title').textContent = mode === 'signup' ? 'Create your account' : 'Welcome back';
+  document.getElementById('auth-sub').textContent = mode === 'signup'
+    ? 'Your journal stays on this device.'
+    : 'Sign in to pick up where you left off.';
+  document.getElementById('auth-submit').textContent = mode === 'signup' ? 'Create account' : 'Sign in';
+  document.getElementById('pw-hint').hidden = mode !== 'signup';
   clearError();
-});
+  rebuildPasswordField();
+  document.getElementById('username').focus();
+}
 
-/* Chrome offers a generated password when it sees a field marked
-   autocomplete="new-password" inside a form it reads as a signup. It makes
-   that decision when the field is parsed, so flipping the attribute on a
-   live input often does nothing — replacing the element with a fresh one
-   makes the browser re-run its heuristics. This needs a secure origin: over
-   https you get "Suggest strong password"; opened as a local file you will
-   not, because Chrome will not save a password for a file:// page. */
-function setPasswordMode() {
+/* Chrome decides whether to offer a generated password when the field is
+   parsed, so switching modes replaces the element rather than flipping the
+   attribute on a live one. */
+function rebuildPasswordField() {
   var old = document.getElementById('password');
   var next = document.createElement('input');
   next.type = 'password';
   next.id = 'password';
-  next.minLength = 4;
-  if (authMode === 'signup') {
-    next.name = 'new-password';
-    next.autocomplete = 'new-password';
-    next.placeholder = 'Choose one, or let your browser suggest';
-  } else {
-    next.name = 'password';
-    next.autocomplete = 'current-password';
-  }
+  next.required = true;
+  if (authMode === 'signup') { next.name = 'new-password'; next.autocomplete = 'new-password'; }
+  else { next.name = 'password'; next.autocomplete = 'current-password'; }
   old.parentNode.replaceChild(next, old);
-  next.focus();
+  var toggle = document.getElementById('pw-toggle');
+  toggle.textContent = 'Show';
+  toggle.setAttribute('aria-label', 'Show password');
 }
+
+document.getElementById('cta-signup').addEventListener('click', function () { openAuth('signup'); });
+document.getElementById('cta-signin').addEventListener('click', function () { openAuth('signin'); });
+document.getElementById('auth-back').addEventListener('click', function () {
+  document.getElementById('auth-form').hidden = true;
+  document.getElementById('landing-intro').hidden = false;
+  clearError();
+});
+document.getElementById('pw-toggle').addEventListener('click', function () {
+  var input = document.getElementById('password');
+  var show = input.type === 'password';
+  input.type = show ? 'text' : 'password';
+  this.textContent = show ? 'Hide' : 'Show';
+  this.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+  input.focus();
+});
 
 document.getElementById('auth-form').addEventListener('submit', function (e) {
   e.preventDefault();
@@ -526,14 +809,15 @@ document.getElementById('auth-form').addEventListener('submit', function (e) {
   var password = document.getElementById('password').value;
   var remember = document.getElementById('remember').checked;
 
-  if (username.length < 2) return showError('Pick a username of at least 2 characters.');
-  if (password.length < 4) return showError('Use a password of at least 4 characters.');
+  if (username.length < 2) return showError('Please choose a username of at least 2 characters.');
+  if (authMode === 'signup' && password.length < 8) return showError('Please use a password of at least 8 characters.');
+  if (!password) return showError('Please enter your password.');
 
   var btn = document.getElementById('auth-submit');
   btn.disabled = true;
-  btn.textContent = authMode === 'signin' ? 'Signing in…' : 'Creating…';
+  btn.innerHTML = '<span class="spinner"></span>' + (authMode === 'signup' ? 'Creating account' : 'Signing in');
 
-  (authMode === 'signin' ? signIn(username, password) : signUp(username, password))
+  (authMode === 'signup' ? signUp(username, password) : signIn(username, password))
     .then(function (user) {
       if (remember) writeJSON(K_SESSION, user.id);
       startSession(user);
@@ -541,667 +825,1184 @@ document.getElementById('auth-form').addEventListener('submit', function (e) {
     .catch(function (err) { showError(err.message); })
     .then(function () {
       btn.disabled = false;
-      btn.textContent = authMode === 'signin' ? 'Sign in' : 'Create account';
+      btn.textContent = authMode === 'signup' ? 'Create account' : 'Sign in';
     });
 });
 
 function startSession(user) {
   session = { id: user.id, username: user.username };
   loadData();
-  document.getElementById('auth').hidden = true;
+  if (!habits.length) { habits = STARTER_HABITS.map(function (h) {
+    return { id: h.id, label: h.label, archived: DEFAULT_ACTIVE.indexOf(h.id) < 0 };
+  }); saveData(); }
+  document.getElementById('landing').hidden = true;
   document.getElementById('app').hidden = false;
   clearError();
-  if (!cryptoOK) showError('This browser has no Web Crypto, so passwords are only weakly hashed here. Open the app over https for proper hashing.');
-  go('home');
+  if (!cryptoOK) showError('This browser has no Web Crypto, so passwords are hashed only weakly here.');
+  scheduleReminders();
+  if (!settings.onboarded) { view = 'onboarding'; onboardStep = 0; return render(); }
+  go('today');
 }
-
-document.getElementById('signout').addEventListener('click', function () {
-  try { localStorage.removeItem(K_SESSION); } catch (err) { /* nothing to clear */ }
-  session = null; records = []; customTags = []; insights = []; draft = null;
-  document.getElementById('app').hidden = true;
-  document.getElementById('auth').hidden = false;
-  document.getElementById('password').value = '';
-});
 
 /* =====================================================================
-   ROUTING — the smart home screen
+   ONBOARDING
+   Four short screens, skippable, shown once. The aim is that someone
+   understands what Sustain does before being asked to do any work.
    ===================================================================== */
-function decideHome() {
-  var now = new Date();
-  var hour = now.getHours();
-  var today = isoDate(now);
-  var yesterday = shiftDate(today, -1);
+var onboardStep = 0, onboardGoals = [], onboardHabits = DEFAULT_ACTIVE.slice();
 
-  var todayRec = getRecord(today);
-  if (hour >= 17 && (!todayRec || !todayRec.evening)) return { screen: 'evening', date: today };
-
-  if (hour < 12) {
-    var lastNight = getRecord(yesterday);
-    if (lastNight && lastNight.evening && !lastNight.morning) return { screen: 'morning', date: yesterday };
-  }
-  return { screen: 'journal-home' };
+function finishOnboarding() {
+  settings.onboarded = true;
+  settings.goals = onboardGoals.slice();
+  habits.forEach(function (h) { h.archived = onboardHabits.indexOf(h.id) < 0; });
+  onboardHabits.forEach(function (id) {
+    if (!habits.some(function (h) { return h.id === id; })) habits.push({ id: id, label: id.replace(/_/g, ' '), archived: false, custom: true });
+  });
+  saveData();
+  go('today');
 }
 
-document.querySelectorAll('nav button').forEach(function (b) {
+function renderOnboarding() {
+  var steps = [step0, step1, step2, step3];
+  document.getElementById('view').innerHTML = steps[onboardStep]();
+  wireOnboarding();
+  var h = document.querySelector('#view h1, #view h2');
+  if (h) { h.setAttribute('tabindex', '-1'); h.focus({ preventScroll: true }); }
+}
+
+function dots() {
+  return '<div class="row" style="gap:.4rem;justify-content:center;margin-top:2rem" aria-hidden="true">' +
+    [0, 1, 2, 3].map(function (i) {
+      return '<span style="width:6px;height:6px;border-radius:50%;background:' +
+        (i === onboardStep ? 'var(--accent)' : 'var(--line-2)') + '"></span>';
+    }).join('') + '</div>';
+}
+
+function step0() {
+  return '<section class="stack-lg" style="padding-top:2rem">' +
+    '<div>' +
+      '<h1>Welcome to Sustain.</h1>' +
+      '<p class="t-lead" style="margin-top:.75rem">Understand what makes you feel your best.</p>' +
+    '</div>' +
+    '<ul class="value-list">' +
+      '<li><span class="n">01</span><span>Track the habits that shape your evening.</span></li>' +
+      '<li><span class="n">02</span><span>Log your energy the next morning.</span></li>' +
+      '<li><span class="n">03</span><span>Discover the patterns in your own data.</span></li>' +
+    '</ul>' +
+    '<button class="btn btn-primary" data-ob="next">Get started</button>' +
+    '<button class="btn btn-ghost btn-sm" data-ob="skip" style="width:100%">Skip for now</button>' +
+    dots() +
+  '</section>';
+}
+
+function step1() {
+  return '<section class="stack-lg" style="padding-top:2rem">' +
+    '<div>' +
+      '<h1>What are you hoping to improve?</h1>' +
+      '<p class="t-lead" style="margin-top:.6rem">Pick any that apply. This only shapes the language Sustain uses — nothing is locked in.</p>' +
+    '</div>' +
+    '<div class="row" style="flex-wrap:wrap;gap:.5rem">' +
+      GOALS.map(function (g) {
+        var on = onboardGoals.indexOf(g.id) >= 0;
+        return '<button class="btn btn-sm ' + (on ? 'btn-primary' : 'btn-secondary') + '" data-goal="' + g.id +
+          '" aria-pressed="' + on + '" style="width:auto">' + g.label + '</button>';
+      }).join('') +
+    '</div>' +
+    '<button class="btn btn-primary" data-ob="next">Continue</button>' +
+    '<button class="btn btn-ghost btn-sm" data-ob="back" style="width:100%">Back</button>' +
+    dots() +
+  '</section>';
+}
+
+function step2() {
+  return '<section class="stack-lg" style="padding-top:2rem">' +
+    '<div>' +
+      '<h1>Choose your habits.</h1>' +
+      '<p class="t-lead" style="margin-top:.6rem">Five or so is plenty. A short list logged honestly tells you far more than a long one.</p>' +
+    '</div>' +
+    '<div>' +
+      '<div class="row-between section-head"><span class="t-eyebrow">Tracking</span>' +
+      '<span class="t-fine t-num" id="ob-count">' + onboardHabits.length + ' of ' + MAX_ACTIVE + '</span></div>' +
+      '<div id="ob-habits"></div>' +
+    '</div>' +
+    '<div>' +
+      '<label class="t-eyebrow" for="ob-new" style="display:block;margin-bottom:.6rem">Add your own</label>' +
+      '<div class="row"><input type="text" id="ob-new" maxlength="40" placeholder="e.g. Walk after dinner">' +
+      '<button class="btn btn-secondary btn-sm" id="ob-add" style="flex:none">Add</button></div>' +
+    '</div>' +
+    '<button class="btn btn-primary" data-ob="next">Continue</button>' +
+    '<button class="btn btn-ghost btn-sm" data-ob="back" style="width:100%">Back</button>' +
+    dots() +
+  '</section>';
+}
+
+function step3() {
+  return '<section class="stack-lg" style="padding-top:2rem">' +
+    '<div>' +
+      '<h1>You are ready.</h1>' +
+      '<p class="t-lead" style="margin-top:.75rem">Two small moments a day. After 5pm, tell Sustain what your day looked like. In the morning, rate your energy — and that pair becomes one night in your journal.</p>' +
+    '</div>' +
+    '<div class="card pad">' +
+      '<p class="t-small">Sustain learns from those check-ins. After about a week it can start looking for patterns, and it will say plainly when there is not enough to go on yet.</p>' +
+    '</div>' +
+    '<button class="btn btn-primary" data-ob="done">Go to Today</button>' +
+    '<p class="t-fine" style="text-align:center">Build a life you can sustain.</p>' +
+    dots() +
+  '</section>';
+}
+
+function wireOnboarding() {
+  document.querySelectorAll('[data-ob]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var a = b.dataset.ob;
+      if (a === 'skip' || a === 'done') return finishOnboarding();
+      if (a === 'back') { onboardStep = Math.max(0, onboardStep - 1); return renderOnboarding(); }
+      onboardStep = Math.min(3, onboardStep + 1);
+      renderOnboarding();
+    });
+  });
+  document.querySelectorAll('[data-goal]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var i = onboardGoals.indexOf(b.dataset.goal);
+      if (i >= 0) onboardGoals.splice(i, 1); else onboardGoals.push(b.dataset.goal);
+      renderOnboarding();
+    });
+  });
+
+  var list = document.getElementById('ob-habits');
+  if (list) {
+    var paint = function () {
+      list.innerHTML = habits.map(function (h) {
+        var on = onboardHabits.indexOf(h.id) >= 0;
+        return '<button type="button" class="habit" data-obh="' + escapeHtml(h.id) + '" aria-pressed="' + on + '">' +
+          '<span class="box" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="var(--accent-ink)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.2 3.2L13 5"/></svg></span>' +
+          '<span class="label">' + escapeHtml(h.label) + '</span></button>';
+      }).join('');
+      document.getElementById('ob-count').textContent = onboardHabits.length + ' of ' + MAX_ACTIVE;
+      list.querySelectorAll('[data-obh]').forEach(function (b) {
+        b.addEventListener('click', function () {
+          var id = b.dataset.obh, i = onboardHabits.indexOf(id);
+          if (i >= 0) onboardHabits.splice(i, 1);
+          else if (onboardHabits.length >= MAX_ACTIVE) { toast('That is enough to start with.'); return; }
+          else onboardHabits.push(id);
+          paint();
+        });
+      });
+    };
+    paint();
+
+    var add = function () {
+      var input = document.getElementById('ob-new');
+      var label = input.value.trim();
+      if (!label) return;
+      var id = label.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+      if (!id) { toast('Please use some letters or numbers.'); return; }
+      if (habits.some(function (h) { return h.id === id; })) { toast('You already have that habit.'); return; }
+      if (onboardHabits.length >= MAX_ACTIVE) { toast('That is enough to start with.'); return; }
+      habits.push({ id: id, label: label, archived: false, custom: true });
+      onboardHabits.push(id);
+      input.value = '';
+      paint();
+    };
+    document.getElementById('ob-add').addEventListener('click', add);
+    document.getElementById('ob-new').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); add(); }
+    });
+  }
+}
+
+/* =====================================================================
+   REMINDERS
+
+   Two mechanisms, and the honest one leads. A calendar file creates two
+   repeating events that fire whether or not Sustain is open, with no
+   server and no push infrastructure. Browser notifications only fire
+   while the page is actually open, so they are offered second and
+   labelled as such. True push would need a service and a subscription
+   store; the settings and scheduling live here so that can drop in later
+   without changing the interface.
+   ===================================================================== */
+var reminderTimers = [];
+
+function scheduleReminders() {
+  reminderTimers.forEach(clearTimeout);
+  reminderTimers = [];
+  if (!session || !settings || !settings.notifications) return;
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+
+  [[settings.remindEvening, 'Evening check-in', 'What did today look like?'],
+   [settings.remindMorning, 'Morning check-in', 'How is your energy?']].forEach(function (r) {
+    var parts = String(r[0] || '').split(':');
+    if (parts.length !== 2) return;
+    var when = new Date();
+    when.setHours(Number(parts[0]), Number(parts[1]), 0, 0);
+    if (when <= new Date()) when.setDate(when.getDate() + 1);
+    var ms = when - new Date();
+    if (ms > 2147483647) return;
+    reminderTimers.push(setTimeout(function () {
+      try { new Notification('Sustain — ' + r[1], { body: r[2], icon: '/icon.png', tag: r[1] }); } catch (err) {}
+      scheduleReminders();
+    }, ms));
+  });
+}
+
+function downloadReminders() {
+  try {
+    var stamp = new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+    var day = today().replace(/-/g, '');
+    function ev(uid, time, title, body) {
+      return ['BEGIN:VEVENT', 'UID:' + uid + '@sustain.local', 'DTSTAMP:' + stamp,
+        'DTSTART:' + day + 'T' + time.replace(':', '') + '00', 'DURATION:PT5M', 'RRULE:FREQ=DAILY',
+        'SUMMARY:' + title, 'DESCRIPTION:' + body,
+        'BEGIN:VALARM', 'TRIGGER:PT0M', 'ACTION:DISPLAY', 'DESCRIPTION:' + title, 'END:VALARM',
+        'END:VEVENT'].join('\r\n');
+    }
+    var ics = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Sustain//Reminders//EN', 'CALSCALE:GREGORIAN',
+      ev('sustain-evening', settings.remindEvening, 'Sustain - evening check-in', 'What did today look like?'),
+      ev('sustain-morning', settings.remindMorning, 'Sustain - morning check-in', 'How is your energy?'),
+      'END:VCALENDAR'].join('\r\n');
+    var blob = new Blob([ics], { type: 'text/calendar' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = 'sustain-reminders.ics';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    toast('Calendar file downloaded');
+  } catch (err) {
+    showError('That calendar file could not be created on this device.');
+  }
+}
+
+function signOut() {
+  try { localStorage.removeItem(K_SESSION); } catch (err) {}
+  session = null; records = []; habits = []; insights = []; settings = null; pending = null;
+  document.getElementById('app').hidden = true;
+  document.getElementById('landing').hidden = false;
+  document.getElementById('auth-form').hidden = true;
+  document.getElementById('landing-intro').hidden = false;
+  clearError();
+}
+
+/* =====================================================================
+   NAVIGATION
+   ===================================================================== */
+document.querySelectorAll('[data-view]').forEach(function (b) {
   b.addEventListener('click', function () { go(b.dataset.view); });
 });
 
 function go(next) {
   view = next;
-  draft = null;
-  document.querySelectorAll('nav button').forEach(function (b) {
-    b.classList.toggle('on', b.dataset.view === next);
+  pending = null;
+  clearError();
+  document.querySelectorAll('[data-view]').forEach(function (b) {
+    if (b.dataset.view === next) b.setAttribute('aria-current', 'page');
+    else b.removeAttribute('aria-current');
   });
+  window.scrollTo(0, 0);
   render();
+  // Move focus to the new heading so screen readers and keyboard users
+  // land where the eye lands, instead of staying on the tab they pressed.
+  var h = document.querySelector('#view h1, #view h2');
+  if (h) { h.setAttribute('tabindex', '-1'); h.focus({ preventScroll: true }); }
+}
+
+var root = function () { return document.getElementById('view'); };
+
+function render() {
+  if (view === 'today') return renderToday();
+  if (view === 'journal') return renderJournal();
+  if (view === 'insights') return renderInsights();
+  if (view === 'settings') return renderSettings();
+  if (view === 'onboarding') return renderOnboarding();
 }
 
 /* =====================================================================
-   RENDER
+   TODAY — the screen that has to be fast
    ===================================================================== */
-var root = document.getElementById('view');
-
-function render() {
-  if (view === 'home') return renderHome();
-  if (view === 'journal') return renderJournal();
-  if (view === 'insights') return renderInsights();
+function greeting() {
+  var h = new Date().getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 18) return 'Good afternoon';
+  return 'Good evening';
 }
 
-function renderHome() {
-  if (draft && draft.screen) {
-    if (draft.screen === 'evening') return renderEvening(draft.date);
-    if (draft.screen === 'morning') return renderMorning(draft.date);
+/* Routing: show the check-in that is actually due, never a menu. */
+function dueCheckIn() {
+  var h = new Date().getHours();
+  var t = today(), y = shiftDate(t, -1);
+  var todayRec = getRecord(t);
+  if (h >= 17 && (!todayRec || !todayRec.evening)) return { kind: 'evening', date: t };
+  if (h < 12) {
+    var last = getRecord(y);
+    if (last && last.evening && !last.morning) return { kind: 'morning', date: y };
   }
-  var d = decideHome();
-  if (d.screen === 'evening') return renderEvening(d.date);
-  if (d.screen === 'morning') return renderMorning(d.date);
-  return renderHomeIdle();
+  return null;
 }
 
-function renderHomeIdle() {
-  var now = new Date();
-  var hour = now.getHours();
-  var today = isoDate(now);
-  var todayRec = getRecord(today);
-  var complete = completeRecords().length;
+function renderToday() {
+  if (pending && pending.kind === 'evening') return renderEvening(pending.date);
+  if (pending && pending.kind === 'morning') return renderMorning(pending.date);
 
-  var msg, sub;
-  if (records.length === 0) {
-    msg = 'Welcome, ' + session.username + '.';
-    sub = 'Sustain works in two small moments: a note about your evening, and a quick rating the next morning. The evening check-in opens after 5pm — that is the whole of day one.';
-  } else if (todayRec && todayRec.evening) {
-    msg = 'Tonight is logged.';
-    sub = 'Rate your sleep in the morning and this night becomes a complete record.';
-  } else if (hour < 17) {
-    msg = 'Nothing to log yet.';
-    sub = 'The evening check-in opens after 5pm.';
+  var due = dueCheckIn();
+  if (due && due.kind === 'evening') return renderEvening(due.date);
+  if (due && due.kind === 'morning') return renderMorning(due.date);
+  return renderTodayIdle();
+}
+
+function renderTodayIdle() {
+  var t = today();
+  var rec = getRecord(t);
+  var recent = recentConsistency();
+  var openMornings = sortedRecords().filter(function (r) { return r.evening && !r.morning; });
+  var gap = lastLoggedGap();
+
+  var headline, sub;
+  if (!records.length) {
+    headline = 'Welcome, ' + escapeHtml(session.username) + '.';
+    sub = 'Sustain works in two small moments: what you did this evening, and how you feel in the morning. Start whenever you like.';
+  } else if (gap !== null && gap >= 3) {
+    headline = 'Welcome back.';
+    sub = 'You logged ' + recent.done + ' of the last ' + recent.window + ' days. Picking it up again is all it takes.';
+  } else if (rec && rec.evening) {
+    headline = 'Tonight is logged.';
+    sub = 'Rate your energy in the morning and this night becomes complete.';
   } else {
-    msg = 'You are caught up.';
-    sub = 'Nothing is waiting for you right now.';
+    headline = 'You are up to date.';
+    sub = 'The evening check-in opens after 5pm.';
   }
 
-  root.innerHTML =
-    '<div class="panel">' +
-      '<p class="eyebrow">' + escapeHtml(now.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })) + '</p>' +
-      '<h2>' + escapeHtml(msg) + '</h2>' +
-      '<p class="lede">' + escapeHtml(sub) + '</p>' +
-      (records.length === 0 ? '' :
-        '<p class="faint" style="margin-top:1.4rem">' + complete + ' complete ' + (complete === 1 ? 'night' : 'nights') + ' recorded.</p>') +
-    '</div>' +
-    habitsPanel() +
-    '<div class="row mt2">' +
-      '<button class="btn-quiet" id="log-evening">Log an evening</button>' +
-      '<button class="btn-quiet" id="log-morning">Log a morning</button>' +
-    '</div>';
+  root().innerHTML =
+    '<section class="stack-lg">' +
+      '<div>' +
+        '<p class="t-eyebrow">' + escapeHtml(greeting()) + '</p>' +
+        '<h1 style="margin-top:.35rem">' + headline + '</h1>' +
+        '<p class="t-lead" style="margin-top:.6rem">' + sub + '</p>' +
+      '</div>' +
 
-  document.getElementById('log-evening').addEventListener('click', function () {
-    draft = { screen: 'evening', date: isoDate(new Date()) };
-    view = 'home'; render();
+      (records.length ? consistencyCard(recent) : '') +
+
+      (openMornings.length
+        ? '<div class="card pad">' +
+            '<p class="t-eyebrow">Waiting on you</p>' +
+            '<p style="margin-top:.5rem">' + openMornings.length +
+              (openMornings.length === 1 ? ' night has' : ' nights have') + ' no energy rating yet.</p>' +
+            '<button class="btn btn-secondary btn-sm" id="fill-morning" style="margin-top:1rem">Rate ' +
+              escapeHtml(prettyDate(openMornings[0].date, { month: 'short', day: 'numeric' })) + '</button>' +
+          '</div>'
+        : '') +
+
+      whatIsWorking() +
+
+      '<div class="row" style="flex-wrap:wrap">' +
+        '<button class="btn btn-secondary btn-sm" id="log-evening">Log an evening</button>' +
+        '<button class="btn btn-secondary btn-sm" id="log-morning">Log a morning</button>' +
+      '</div>' +
+    '</section>';
+
+  var fm = document.getElementById('fill-morning');
+  if (fm) fm.addEventListener('click', function () { pending = { kind: 'morning', date: openMornings[0].date }; render(); });
+  document.getElementById('log-evening').addEventListener('click', function () { pending = { kind: 'evening', date: today() }; render(); });
+  document.getElementById('log-morning').addEventListener('click', function () {
+    if (openMornings.length) { pending = { kind: 'morning', date: openMornings[0].date }; render(); }
+    else toast('No evenings are waiting for a rating.');
   });
-  document.getElementById('log-morning').addEventListener('click', openMissedMorning);
 }
 
-/* ---------- what has worked, computed locally (no API call) ----------
-   The AI insights are on-demand and rate-limited by choice. This little
-   panel is pure arithmetic over local data, so the app can quietly remind
-   you what has gone well without spending a request. */
+/* Consistency, never streaks: "5 of the last 7" cannot be broken. */
+function recentConsistency() {
+  var win = Math.min(14, Math.max(7, records.length));
+  var start = shiftDate(today(), -(win - 1));
+  var done = records.filter(function (r) { return r.date >= start && r.evening; }).length;
+  return { done: done, window: win };
+}
+function lastLoggedGap() {
+  var all = sortedRecords();
+  if (!all.length) return null;
+  return daysBetween(all[0].date, today());
+}
+
+function consistencyCard(recent) {
+  var pct = Math.round((recent.done / recent.window) * 100);
+  return '<div class="card pad">' +
+    '<div class="row-between">' +
+      '<div><p class="t-eyebrow">Consistency</p>' +
+      '<p style="margin-top:.4rem"><strong class="t-num">' + recent.done + ' of the last ' + recent.window + ' days</strong> logged.</p></div>' +
+      '<span class="chip chip-accent t-num">' + pct + '%</span>' +
+    '</div>' +
+  '</div>';
+}
+
+/* Local arithmetic, no API call: the quiet everyday version of insights. */
 function habitEffects() {
   var done = completeRecords();
-  if (done.length < 5) return [];
+  if (done.length < 6) return [];
   var out = [];
-  allTags().forEach(function (t) {
-    var withT = done.filter(function (r) { return r.evening.tags.indexOf(t.id) >= 0; });
-    var without = done.filter(function (r) { return r.evening.tags.indexOf(t.id) < 0; });
-    if (withT.length < 3 || without.length < 3) return;
+  habits.forEach(function (h) {
+    var withH = done.filter(function (r) { return r.evening.tags.indexOf(h.id) >= 0; });
+    var without = done.filter(function (r) { return r.evening.tags.indexOf(h.id) < 0; });
+    if (withH.length < 3 || without.length < 3) return;
     var avg = function (rs) { return rs.reduce(function (s, r) { return s + r.morning.restedness; }, 0) / rs.length; };
-    out.push({ id: t.id, label: t.label, delta: avg(withT) - avg(without), n: withT.length });
+    out.push({ id: h.id, label: h.label, delta: avg(withH) - avg(without), n: withH.length });
   });
   return out.sort(function (a, b) { return Math.abs(b.delta) - Math.abs(a.delta); });
 }
 
-function habitsPanel() {
-  var effects = habitEffects().filter(function (e) { return Math.abs(e.delta) >= 0.8; }).slice(0, 2);
-  if (!effects.length) return '';
-  var rows = effects.map(function (e) {
-    var better = e.delta > 0;
-    return '<p style="margin:.5rem 0 0">' +
-      '<span class="tag-static">' + escapeHtml(e.label) + '</span> ' +
-      '<span class="muted">' + (better ? 'nights rate ' : 'nights rate ') +
-      '<strong style="color:' + (better ? 'var(--sage)' : 'var(--amber)') + '">' +
-      (better ? '+' : '') + e.delta.toFixed(1) + '</strong> on restedness, across ' + e.n + ' nights.</span></p>';
-  }).join('');
-  return '<div class="panel"><p class="eyebrow">What has gone with good sleep</p>' + rows +
-    '<p class="faint" style="margin-top:.9rem">Simple averages from your own log — not a claim about cause.</p></div>';
+function whatIsWorking() {
+  var top = habitEffects().filter(function (e) { return Math.abs(e.delta) >= 1; }).slice(0, 2);
+  if (!top.length) return '';
+  return '<div class="card pad">' +
+    '<p class="t-eyebrow">From your own data</p>' +
+    top.map(function (e) {
+      return '<p style="margin-top:.6rem">You tend to report <strong>' +
+        (e.delta > 0 ? 'higher' : 'lower') + ' energy</strong> on days with <span class="chip">' +
+        escapeHtml(e.label) + '</span> <span class="t-fine">(' + (e.delta > 0 ? '+' : '') +
+        e.delta.toFixed(1) + ' across ' + e.n + ' days)</span></p>';
+    }).join('') +
+    '<p class="t-fine" style="margin-top:.8rem">An observation from your log, not a claim about cause.</p>' +
+  '</div>';
 }
 
-/* ---------- evening form ---------- */
+/* ---------- evening check-in ---------- */
 function renderEvening(date) {
-  var existing = getRecord(date);
-  var picked = existing && existing.evening ? existing.evening.tags.slice() : [];
-  var note = existing && existing.evening ? existing.evening.note : '';
+  var rec = getRecord(date);
+  var picked = rec && rec.evening ? rec.evening.tags.slice() : [];
+  var note = rec && rec.evening ? rec.evening.note : '';
+  var list = activeHabits();
 
-  root.innerHTML =
-    '<div class="panel">' +
-      '<p class="eyebrow">Evening &middot; ' + escapeHtml(prettyDate(date)) + '</p>' +
-      '<h2>What did today look like?</h2>' +
-      '<p class="lede">Tap whatever applies. Nothing here is a rule you broke.</p>' +
-      '<div class="tags" id="tag-list"></div>' +
-      '<div class="add-tag">' +
-        '<input type="text" id="new-tag" placeholder="Add your own tag" maxlength="40">' +
-        '<button class="btn-quiet" id="add-tag">Add</button>' +
+  root().innerHTML =
+    '<section class="stack-lg">' +
+      '<div>' +
+        '<p class="t-eyebrow">Evening &middot; ' + escapeHtml(prettyDate(date)) + '</p>' +
+        '<h1 style="margin-top:.35rem">What did today look like?</h1>' +
+        '<p class="t-lead" style="margin-top:.6rem">Tap what applies. Nothing here is a rule you broke.</p>' +
       '</div>' +
-      '<div style="margin-top:1.6rem">' +
-        '<label class="faint" for="note" style="display:block;margin-bottom:.4rem">Anything else about today?</label>' +
-        '<input type="text" id="note" maxlength="200" value="' + escapeAttr(note) + '" placeholder="One line is plenty">' +
-      '</div>' +
-      '<div class="row" style="margin-top:1.6rem">' +
-        '<button class="btn-primary" id="save-evening">Save</button>' +
-        (existing && existing.evening ? '<span class="faint">Editing an entry you already saved.</span>' : '') +
-      '</div>' +
-    '</div>';
 
-  function paintTags() {
-    document.getElementById('tag-list').innerHTML = allTags().map(function (t) {
-      return '<button type="button" class="tag' + (picked.indexOf(t.id) >= 0 ? ' on' : '') +
-        '" data-tag="' + escapeAttr(t.id) + '" aria-pressed="' + (picked.indexOf(t.id) >= 0) + '">' +
-        escapeHtml(t.label) + '</button>';
+      '<div>' +
+        '<div class="row-between section-head">' +
+          '<h2>Your habits</h2>' +
+          '<span class="t-fine t-num" id="hab-count"></span>' +
+        '</div>' +
+        (list.length
+          ? '<div id="habit-list"></div>'
+          : '<div class="card pad empty"><h3>No habits yet</h3><p class="t-small">Add a few in Settings and they will appear here each evening.</p></div>') +
+      '</div>' +
+
+      '<div>' +
+        '<label class="t-eyebrow" for="note" style="display:block;margin-bottom:.6rem">One thing worth remembering</label>' +
+        '<textarea id="note" maxlength="400" placeholder="Optional. A line is plenty.">' + escapeHtml(note) + '</textarea>' +
+      '</div>' +
+
+      '<button class="btn btn-primary" id="save-evening">Save evening</button>' +
+    '</section>';
+
+  function paint() {
+    var el = document.getElementById('habit-list');
+    if (!el) return;
+    el.innerHTML = list.map(function (h) {
+      var on = picked.indexOf(h.id) >= 0;
+      return '<button type="button" class="habit" data-h="' + escapeHtml(h.id) + '" aria-pressed="' + on + '">' +
+        '<span class="box" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="var(--accent-ink)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.2 3.2L13 5"/></svg></span>' +
+        '<span class="label">' + escapeHtml(h.label) + '</span>' +
+      '</button>';
     }).join('');
-    document.querySelectorAll('[data-tag]').forEach(function (b) {
+    document.getElementById('hab-count').textContent = picked.length + ' of ' + list.length;
+    el.querySelectorAll('[data-h]').forEach(function (b) {
       b.addEventListener('click', function () {
-        var id = b.dataset.tag;
-        var i = picked.indexOf(id);
+        var id = b.dataset.h, i = picked.indexOf(id);
         if (i >= 0) picked.splice(i, 1); else picked.push(id);
-        paintTags();
+        paint();
       });
     });
   }
-  paintTags();
-
-  document.getElementById('add-tag').addEventListener('click', function () {
-    var input = document.getElementById('new-tag');
-    var label = input.value.trim();
-    if (!label) return;
-    var id = label.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
-    if (!id) return;
-    if (!allTags().some(function (t) { return t.id === id; })) {
-      customTags.push({ id: id, label: label });
-      saveData();               // custom tags persist for future evenings
-    }
-    if (picked.indexOf(id) < 0) picked.push(id);
-    input.value = '';
-    paintTags();
-  });
-  document.getElementById('new-tag').addEventListener('keydown', function (e) {
-    if (e.key === 'Enter') { e.preventDefault(); document.getElementById('add-tag').click(); }
-  });
+  paint();
 
   document.getElementById('save-evening').addEventListener('click', function () {
-    var rec = getRecord(date);
-    if (!rec) { rec = { date: date, evening: null, morning: null, complete: false }; records.push(rec); }
-    rec.evening = { tags: picked, note: document.getElementById('note').value.trim(), loggedAt: new Date().toISOString() };
-    rec.complete = !!(rec.evening && rec.morning);
-    saveData();
-    draft = null;
-    go('journal');
+    var r = getRecord(date);
+    if (!r) { r = { date: date, evening: null, morning: null, complete: false }; records.push(r); }
+    r.evening = { tags: picked, note: document.getElementById('note').value.trim(), loggedAt: new Date().toISOString() };
+    r.complete = !!(r.evening && r.morning);
+    if (!saveData()) return;
+    pending = null;
+    toast('Evening saved');
+    go('today');
   });
 }
 
-/* ---------- morning check-in — three controls, deliberately ---------- */
+/* ---------- morning check-in — kept short on purpose ---------- */
 function renderMorning(date) {
   var rec = getRecord(date);
-  if (!rec || !rec.evening) { showError('There is no evening entry for that night yet.'); return renderHomeIdle(); }
+  if (!rec || !rec.evening) { toast('That night has no evening entry yet.'); return renderTodayIdle(); }
 
-  var quality = rec.morning ? rec.morning.sleepQuality : 6;
-  var rested = rec.morning ? rec.morning.restedness : 6;
+  var energy = rec.morning ? rec.morning.restedness : null;
+  var quality = rec.morning ? rec.morning.sleepQuality : null;
   var woke = rec.morning ? rec.morning.wokeDuringNight : false;
 
-  var tagChips = rec.evening.tags.length
-    ? rec.evening.tags.map(function (t) { return '<span class="tag-static">' + escapeHtml(tagLabel(t)) + '</span>'; }).join(' ')
-    : '<span class="faint">No tags logged.</span>';
-
-  root.innerHTML =
-    '<div class="panel">' +
-      '<p class="eyebrow">Last night &middot; ' + escapeHtml(prettyDate(date)) + '</p>' +
-      '<div style="margin:.6rem 0 .3rem">' + tagChips + '</div>' +
-      (rec.evening.note ? '<p class="note">' + escapeHtml(rec.evening.note) + '</p>' : '') +
-    '</div>' +
-    '<div class="panel">' +
-      '<h2>How did you sleep?</h2>' +
-      sliderHtml('quality', 'Sleep quality', quality, 'restless', 'deep') +
-      sliderHtml('rested', 'How rested you feel', rested, 'flat', 'sharp') +
-      '<div class="toggle-row">' +
-        '<span>Woke up during the night</span>' +
-        '<label class="switch"><input type="checkbox" id="woke"' + (woke ? ' checked' : '') + '><span></span></label>' +
+  root().innerHTML =
+    '<section class="stack-lg">' +
+      '<div>' +
+        '<p class="t-eyebrow">Morning &middot; ' + escapeHtml(prettyDate(date)) + '</p>' +
+        '<h1 style="margin-top:.35rem">How is your energy?</h1>' +
       '</div>' +
-      '<div style="margin-top:1.6rem"><button class="btn-primary" id="save-morning">Save</button></div>' +
-    '</div>';
 
-  bindSlider('quality');
-  bindSlider('rested');
+      '<div class="card pad">' +
+        '<p class="t-eyebrow">Last night you logged</p>' +
+        '<div style="margin-top:.6rem;display:flex;flex-wrap:wrap;gap:.4rem">' +
+          (rec.evening.tags.length
+            ? rec.evening.tags.map(function (t) { return '<span class="chip">' + escapeHtml(habitLabel(t)) + '</span>'; }).join('')
+            : '<span class="t-small">No habits logged.</span>') +
+        '</div>' +
+        (rec.evening.note ? '<p class="note-text" style="margin-top:.8rem">' + escapeHtml(rec.evening.note) + '</p>' : '') +
+      '</div>' +
+
+      '<div>' +
+        '<div class="row-between section-head"><h2>Energy</h2><span class="t-num" id="energy-val" style="font-weight:600"></span></div>' +
+        scaleHtml('energy', energy) +
+      '</div>' +
+
+      '<div>' +
+        '<div class="row-between section-head"><h2>Sleep quality</h2><span class="t-num" id="quality-val" style="font-weight:600"></span></div>' +
+        scaleHtml('quality', quality) +
+      '</div>' +
+
+      '<button type="button" class="habit" id="woke" aria-pressed="' + woke + '">' +
+        '<span class="box" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="var(--accent-ink)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.2 3.2L13 5"/></svg></span>' +
+        '<span class="label">Woke up during the night</span>' +
+      '</button>' +
+
+      '<button class="btn btn-primary" id="save-morning">Save morning</button>' +
+    '</section>';
+
+  bindScale('energy', energy);
+  bindScale('quality', quality);
+  var wokeBtn = document.getElementById('woke');
+  wokeBtn.addEventListener('click', function () {
+    wokeBtn.setAttribute('aria-pressed', wokeBtn.getAttribute('aria-pressed') === 'true' ? 'false' : 'true');
+  });
 
   document.getElementById('save-morning').addEventListener('click', function () {
+    var e = Number(document.getElementById('energy').dataset.value || 0);
+    var q = Number(document.getElementById('quality').dataset.value || 0);
+    if (!e || !q) { showError('Please rate both energy and sleep quality before saving.'); return; }
     var now = new Date();
     rec.morning = {
-      sleepQuality: Number(document.getElementById('quality').value),
-      restedness: Number(document.getElementById('rested').value),
-      wokeDuringNight: document.getElementById('woke').checked,
+      sleepQuality: q,
+      restedness: e,                      // stored name kept from v1; shown as "energy"
+      wokeDuringNight: wokeBtn.getAttribute('aria-pressed') === 'true',
       loggedAt: now.toISOString(),
       lateEntry: isLate(date, now)
     };
     rec.complete = true;
-    saveData();
-    draft = null;
-    go('journal');
+    if (!saveData()) return;
+    pending = null;
+    toast('Morning saved');
+    go('today');
   });
 }
 
-function sliderHtml(id, label, value, lowWord, highWord) {
-  return '<div class="slider-row">' +
-    '<div class="slider-head"><label for="' + id + '">' + escapeHtml(label) + '</label>' +
-    '<span class="val" id="' + id + '-val">' + value + '</span></div>' +
-    '<input type="range" id="' + id + '" min="1" max="10" step="1" value="' + value + '">' +
-    '<div class="scale"><span>1 &middot; ' + lowWord + '</span><span>10 &middot; ' + highWord + '</span></div>' +
-  '</div>';
-}
-function bindSlider(id) {
-  var el = document.getElementById(id);
-  el.addEventListener('input', function () { document.getElementById(id + '-val').textContent = el.value; });
-}
-
-/* ---------- journal ---------- */
-function renderJournal() {
-  var list = sortedRecords();
-
-  if (!list.length) {
-    root.innerHTML =
-      '<div class="panel">' +
-        '<h2>Your journal is empty.</h2>' +
-        '<p class="lede">Once you log an evening and the morning after it, the pair shows up here as one night.</p>' +
-        '<div class="row mt2"><button class="btn-primary" id="start-evening">Log an evening</button></div>' +
-      '</div>';
-    document.getElementById('start-evening').addEventListener('click', function () {
-      draft = { screen: 'evening', date: isoDate(new Date()) }; view = 'home'; render();
-    });
-    return;
+function scaleHtml(id, value) {
+  var cells = '';
+  for (var i = 1; i <= 10; i++) {
+    cells += '<button type="button" data-v="' + i + '" aria-pressed="' + (value === i) + '" aria-label="' + i + ' out of 10">' + i + '</button>';
   }
-
-  var done = completeRecords();
-  root.innerHTML =
-    (done.length >= 2 ? '<div class="panel">' + chartSvg(done.slice(0, 30).reverse()) + '</div>' : '') +
-    habitsPanel() +
-    '<div class="between mt2" style="margin-bottom:1rem">' +
-      '<p class="eyebrow" style="margin:0">' + list.length + ' ' + (list.length === 1 ? 'night' : 'nights') + '</p>' +
-      '<div class="row">' +
-        '<button class="btn-link" id="add-missed">Add a missed entry</button>' +
-        '<button class="btn-link" id="export">Export</button>' +
-        '<button class="btn-link" id="import">Import</button>' +
-      '</div>' +
-    '</div>' +
-    list.map(entryHtml).join('');
-
-  document.getElementById('export').addEventListener('click', exportData);
-  document.getElementById('import').addEventListener('click', openImport);
-  document.getElementById('add-missed').addEventListener('click', openMissedPicker);
-  document.querySelectorAll('[data-fill]').forEach(function (b) {
-    b.addEventListener('click', function () {
-      draft = { screen: b.dataset.kind, date: b.dataset.fill };
-      view = 'home'; render();
+  return '<div class="energy-grid" id="' + id + '" role="group" data-value="' + (value || '') + '">' + cells + '</div>' +
+    '<div class="scale-ends"><span class="t-fine">Depleted</span><span class="t-fine">Excellent</span></div>';
+}
+function bindScale(id, initial) {
+  var grid = document.getElementById(id);
+  var out = document.getElementById(id + '-val');
+  function paint(v) {
+    grid.dataset.value = v || '';
+    out.textContent = v ? v + '/10' : '—';
+    grid.querySelectorAll('[data-v]').forEach(function (b) {
+      var n = Number(b.dataset.v);
+      b.setAttribute('aria-pressed', String(n === v));
+      b.classList.toggle('filled', !!v && n < v);
     });
-  });
-}
-
-function entryHtml(r) {
-  var tags = r.evening && r.evening.tags.length
-    ? r.evening.tags.map(function (t) { return '<span class="tag-static">' + escapeHtml(tagLabel(t)) + '</span>'; }).join(' ')
-    : '<span class="faint">No tags</span>';
-
-  var head = '<div class="entry-date"><h3>' + escapeHtml(prettyDate(r.date)) + '</h3>' +
-    (r.complete
-      ? (r.morning.lateEntry ? '<span class="pill late">filled in later</span>' : '')
-      : '<span class="pill wait">' + (r.evening ? 'waiting on morning' : 'evening missing') + '</span>') +
-    '</div>';
-
-  var body = r.evening
-    ? '<div>' + tags + '</div>' + (r.evening.note ? '<p class="note">' + escapeHtml(r.evening.note) + '</p>' : '')
-    : '<p class="faint">No evening entry for this night. ' +
-      '<button class="btn-link" data-fill="' + r.date + '" data-kind="evening">Add it</button></p>';
-
-  var sleep = r.morning
-    ? '<div class="sleep-line">' +
-        '<div class="metric"><div class="k">Quality</div><div class="v">' + r.morning.sleepQuality + '<span class="faint">/10</span></div></div>' +
-        '<div class="metric"><div class="k">Rested</div><div class="v">' + r.morning.restedness + '<span class="faint">/10</span></div></div>' +
-        '<div class="metric"><div class="k">Woke</div><div class="v">' + (r.morning.wokeDuringNight ? 'Yes' : 'No') + '</div></div>' +
-      '</div>'
-    : (r.evening ? '<div class="sleep-line"><p class="faint" style="margin:0">Sleep not rated. ' +
-        '<button class="btn-link" data-fill="' + r.date + '" data-kind="morning">Add it now</button></p></div>' : '');
-
-  return '<div class="entry' + (r.complete ? '' : ' incomplete') + '">' + head + body + sleep + '</div>';
-}
-
-/* ---------- restedness chart (hand-rolled SVG, no chart library) ---------- */
-function chartSvg(rows) {
-  var W = 600, H = 170, PAD_L = 26, PAD_B = 22, PAD_T = 12;
-  var innerW = W - PAD_L - 10, innerH = H - PAD_B - PAD_T;
-  var n = rows.length;
-  var x = function (i) { return PAD_L + (n === 1 ? innerW / 2 : (i / (n - 1)) * innerW); };
-  var y = function (v) { return PAD_T + innerH - ((v - 1) / 9) * innerH; };
-
-  var grid = [2, 4, 6, 8, 10].map(function (v) {
-    return '<line x1="' + PAD_L + '" y1="' + y(v) + '" x2="' + (W - 10) + '" y2="' + y(v) + '" stroke="rgba(255,255,255,.07)"/>' +
-      '<text x="' + (PAD_L - 8) + '" y="' + (y(v) + 4) + '" text-anchor="end" font-size="10" fill="#757c99">' + v + '</text>';
-  }).join('');
-
-  var path = rows.map(function (r, i) { return (i ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(r.morning.restedness).toFixed(1); }).join(' ');
-  var area = path + ' L' + x(n - 1).toFixed(1) + ' ' + (PAD_T + innerH) + ' L' + x(0).toFixed(1) + ' ' + (PAD_T + innerH) + ' Z';
-  var dots = rows.map(function (r, i) {
-    return '<circle cx="' + x(i).toFixed(1) + '" cy="' + y(r.morning.restedness).toFixed(1) + '" r="2.5" fill="#8f9bd8"><title>' +
-      escapeHtml(r.date) + ' — rested ' + r.morning.restedness + '/10</title></circle>';
-  }).join('');
-
-  return '<p class="eyebrow">Restedness over time</p>' +
-    '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" height="auto" role="img" aria-label="Line chart of restedness across your logged nights">' +
-      '<defs><linearGradient id="fade" x1="0" y1="0" x2="0" y2="1">' +
-        '<stop offset="0%" stop-color="#8f9bd8" stop-opacity=".25"/><stop offset="100%" stop-color="#8f9bd8" stop-opacity="0"/>' +
-      '</linearGradient></defs>' + grid +
-      '<path d="' + area + '" fill="url(#fade)"/>' +
-      '<path d="' + path + '" fill="none" stroke="#8f9bd8" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>' +
-      dots +
-      '<text x="' + PAD_L + '" y="' + (H - 6) + '" font-size="10" fill="#757c99">' + escapeHtml(rows[0].date) + '</text>' +
-      '<text x="' + (W - 10) + '" y="' + (H - 6) + '" text-anchor="end" font-size="10" fill="#757c99">' + escapeHtml(rows[n - 1].date) + '</text>' +
-    '</svg>';
-}
-
-/* ---------- filling in a missed entry ---------- */
-function openMissedPicker() {
-  var today = isoDate(new Date());
-  root.innerHTML =
-    '<div class="panel">' +
-      '<p class="eyebrow">Catching up</p>' +
-      '<h2>Add a missed entry</h2>' +
-      '<p class="lede">Pick the night it belongs to. A morning rating added after noon is kept, and quietly marked as filled in later.</p>' +
-      '<div style="margin-top:1.4rem"><label class="faint" for="missed-date">Night of</label>' +
-      '<input type="date" id="missed-date" value="' + shiftDate(today, -1) + '" max="' + today + '"></div>' +
-      '<div class="row mt2">' +
-        '<button class="btn-primary" id="missed-evening">Evening entry</button>' +
-        '<button class="btn-quiet" id="missed-morning">Morning rating</button>' +
-        '<button class="btn-link" id="missed-cancel">Cancel</button>' +
-      '</div>' +
-    '</div>';
-
-  document.getElementById('missed-evening').addEventListener('click', function () {
-    draft = { screen: 'evening', date: document.getElementById('missed-date').value }; view = 'home'; render();
-  });
-  document.getElementById('missed-morning').addEventListener('click', function () {
-    draft = { screen: 'morning', date: document.getElementById('missed-date').value }; view = 'home'; render();
-  });
-  document.getElementById('missed-cancel').addEventListener('click', function () { go('journal'); });
-}
-
-function openMissedMorning() {
-  var candidates = sortedRecords().filter(function (r) { return r.evening && !r.morning; });
-  if (!candidates.length) { view = 'journal'; openMissedPicker(); return; }
-  draft = { screen: 'morning', date: candidates[0].date };
-  view = 'home';
-  render();
-}
-
-/* ---------- export ---------- */
-function exportData() {
-  try {
-    var payload = { app: 'Sustain', exportedAt: new Date().toISOString(), username: session.username, customTags: customTags, records: sortedRecords(), insights: insights };
-    var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement('a');
-    a.href = url;
-    a.download = 'sustain-' + isoDate(new Date()) + '.json';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
-  } catch (err) {
-    showError('Export failed: ' + err.message);
   }
-}
-
-/* ---------- import ----------
-   Moving a journal between devices, since browser storage never leaves the
-   device it was written on. The merge is additive and never destructive:
-   nights you already have are kept, missing halves are filled in, and a
-   night present on both sides is left exactly as it is. Worst case for a
-   mistaken import is some extra nights, not a lost journal. */
-function openImport() {
-  root.innerHTML =
-    '<div class="panel">' +
-      '<p class="eyebrow">Moving devices</p>' +
-      '<h2>Import a journal</h2>' +
-      '<p class="lede">Choose a file exported from Sustain on another device. Nothing you already have is overwritten.</p>' +
-      '<div style="margin-top:1.4rem"><input type="file" id="import-file" accept="application/json,.json"></div>' +
-      '<div id="import-preview"></div>' +
-      '<div class="row mt2"><button class="btn-link" id="import-cancel">Back to journal</button></div>' +
-    '</div>';
-
-  document.getElementById('import-cancel').addEventListener('click', function () { go('journal'); });
-  document.getElementById('import-file').addEventListener('change', function () {
-    var file = this.files && this.files[0];
-    if (!file) return;
-    var reader = new FileReader();
-    reader.onerror = function () { showError('That file could not be read.'); };
-    reader.onload = function () {
-      var payload;
-      try {
-        payload = JSON.parse(String(reader.result));
-      } catch (err) {
-        document.getElementById('import-preview').innerHTML =
-          '<div class="banner error" style="margin-top:1.2rem">That file is not valid JSON. Make sure it is the file Sustain exported.</div>';
-        return;
-      }
-      if (!payload || !Array.isArray(payload.records)) {
-        document.getElementById('import-preview').innerHTML =
-          '<div class="banner error" style="margin-top:1.2rem">That JSON has no records in it, so it is probably not a Sustain export.</div>';
-        return;
-      }
-      previewImport(payload);
-    };
-    reader.readAsText(file);
+  grid.querySelectorAll('[data-v]').forEach(function (b) {
+    b.addEventListener('click', function () { paint(Number(b.dataset.v)); });
   });
-}
-
-/* Count first, apply only on confirmation — an import edits the journal, so
-   it should say what it is about to do before it does it. */
-function previewImport(payload) {
-  var plan = { add: 0, fill: 0, same: 0 };
-  payload.records.forEach(function (r) {
-    if (!r || !r.date) return;
-    var mine = getRecord(r.date);
-    if (!mine) return plan.add++;
-    if ((!mine.evening && r.evening) || (!mine.morning && r.morning)) return plan.fill++;
-    plan.same++;
-  });
-
-  var el = document.getElementById('import-preview');
-  el.innerHTML =
-    '<div class="banner info" style="margin-top:1.2rem">' +
-      '<strong>' + payload.records.length + ' nights in that file.</strong><br>' +
-      plan.add + ' new to this device, ' +
-      plan.fill + ' would fill a missing half, ' +
-      plan.same + ' already here and left alone.' +
-    '</div>' +
-    '<div class="row"><button class="btn-primary" id="import-go">Import</button></div>';
-
-  document.getElementById('import-go').addEventListener('click', function () {
-    var result = applyImport(payload);
-    go('journal');
-    var banner = document.createElement('div');
-    banner.className = 'banner info';
-    banner.textContent = 'Imported: ' + result.added + ' nights added, ' + result.filled +
-      ' completed, ' + result.same + ' left as they were' +
-      (result.tags ? ', ' + result.tags + ' custom tags added' : '') +
-      (result.past ? ', ' + result.past + ' past insights added' : '') + '.';
-    root.insertBefore(banner, root.firstChild);
-  });
-}
-
-function applyImport(payload) {
-  var out = { added: 0, filled: 0, same: 0, tags: 0, past: 0 };
-
-  payload.records.forEach(function (r) {
-    if (!r || typeof r.date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(r.date)) return;
-    var mine = getRecord(r.date);
-    if (!mine) {
-      mine = { date: r.date, evening: null, morning: null, complete: false };
-      records.push(mine);
-      out.added++;
-    } else if ((!mine.evening && r.evening) || (!mine.morning && r.morning)) {
-      out.filled++;
-    } else {
-      out.same++;
-      return;
-    }
-    if (!mine.evening && r.evening) {
-      mine.evening = {
-        tags: Array.isArray(r.evening.tags) ? r.evening.tags.map(String) : [],
-        note: String(r.evening.note || '').slice(0, 200),
-        loggedAt: r.evening.loggedAt || new Date().toISOString()
-      };
-    }
-    if (!mine.morning && r.morning) {
-      mine.morning = {
-        sleepQuality: Math.min(10, Math.max(1, Math.round(Number(r.morning.sleepQuality)) || 1)),
-        restedness: Math.min(10, Math.max(1, Math.round(Number(r.morning.restedness)) || 1)),
-        wokeDuringNight: !!r.morning.wokeDuringNight,
-        loggedAt: r.morning.loggedAt || new Date().toISOString(),
-        lateEntry: !!r.morning.lateEntry
-      };
-    }
-    mine.complete = !!(mine.evening && mine.morning);
-  });
-
-  (payload.customTags || []).forEach(function (t) {
-    if (!t || !t.id) return;
-    if (allTags().some(function (x) { return x.id === t.id; })) return;
-    customTags.push({ id: String(t.id), label: String(t.label || t.id) });
-    out.tags++;
-  });
-
-  (payload.insights || []).forEach(function (ins) {
-    if (!ins || !ins.id) return;
-    if (insights.some(function (x) { return x.id === ins.id; })) return;
-    insights.push(ins);
-    out.past++;
-  });
-
-  saveData();
-  return out;
+  paint(initial || 0);
 }
 
 /* =====================================================================
-   INSIGHTS — the AI call
+   JOURNAL — calendar plus entries
    ===================================================================== */
-var MIN_NIGHTS = 7;
-var WINDOW = 7;                        // nights per analysis — one week, matching the journal
-var API_URL = '/api/insights';         // our own serverless function, not Anthropic directly
+var calMonth = null;   // first of the displayed month
 
-/* The model name, the system prompt and the response schema all live in
-   api/insights.js, not here. Two reasons: the API key must stay on the
-   server, and keeping the prompt there means this public endpoint can only
-   ever ask one question about sleep data — it cannot be used by a stranger
-   as a free general-purpose Claude proxy. */
+function openCheckIn(kind, date) {
+  go(kind === "day" ? "journal" : "today");
+  pending = { kind: kind, date: date };
+  render();
+}
+
+function renderJournal() {
+  if (pending && pending.kind === 'day') return renderDay(pending.date);
+  if (!calMonth) calMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+
+  var all = sortedRecords();
+  if (!all.length) {
+    root().innerHTML =
+      '<section class="stack-lg">' +
+        '<h1>Journal</h1>' +
+        '<div class="card pad empty">' +
+          '<h3>Your story starts here.</h3>' +
+          '<p class="t-small" style="margin-top:.5rem">No entries yet. Log an evening and the morning after it, and the pair appears here as one night.</p>' +
+          '<button class="btn btn-primary btn-sm" id="j-start" style="width:auto;margin-top:1.5rem">Log an evening</button>' +
+        '</div>' +
+      '</section>';
+    document.getElementById('j-start').addEventListener('click', function () { openCheckIn('evening', today()); });
+    return;
+  }
+
+  root().innerHTML =
+    '<section class="stack-lg">' +
+      '<div class="row-between"><h1>Journal</h1><span class="t-fine t-num">' + all.length + (all.length === 1 ? ' night' : ' nights') + '</span></div>' +
+      backupNudge() +
+      calendarHtml() +
+      '<div>' +
+        '<label class="t-eyebrow" for="j-search" style="display:block;margin-bottom:.6rem">Search your notes</label>' +
+        '<input type="search" id="j-search" placeholder="Search reflections and habits">' +
+      '</div>' +
+      '<div id="j-list"></div>' +
+    '</section>';
+
+  bindCalendar();
+  var nudge = document.getElementById('nudge-export');
+  if (nudge) nudge.addEventListener('click', exportData);
+  var input = document.getElementById('j-search');
+  input.addEventListener('input', function () { paintList(input.value.trim().toLowerCase()); });
+  paintList('');
+
+  function paintList(q) {
+    var rows = all.filter(function (r) {
+      if (!q) return true;
+      var hay = (r.evening ? r.evening.note + ' ' + r.evening.tags.map(habitLabel).join(' ') : '') + ' ' + r.date;
+      return hay.toLowerCase().indexOf(q) >= 0;
+    });
+    var el = document.getElementById('j-list');
+    if (!rows.length) {
+      el.innerHTML = '<div class="card pad empty"><h3>Nothing found</h3><p class="t-small" style="margin-top:.5rem">No nights match that search.</p></div>';
+      return;
+    }
+    el.innerHTML = rows.slice(0, 60).map(entryCard).join('');
+    el.querySelectorAll('[data-open]').forEach(function (b) {
+      b.addEventListener('click', function () { pending = { kind: 'day', date: b.dataset.open }; render(); });
+    });
+  }
+}
+
+function entryCard(r) {
+  var tags = r.evening && r.evening.tags.length
+    ? r.evening.tags.slice(0, 4).map(function (t) { return '<span class="chip">' + escapeHtml(habitLabel(t)) + '</span>'; }).join(' ') +
+      (r.evening.tags.length > 4 ? ' <span class="t-fine">+' + (r.evening.tags.length - 4) + '</span>' : '')
+    : '<span class="t-fine">No habits logged</span>';
+
+  var status = r.complete
+    ? (r.morning.lateEntry ? '<span class="pill pill-late">Added later</span>' : '')
+    : '<span class="pill pill-wait">' + (r.evening ? 'Needs morning' : 'Needs evening') + '</span>';
+
+  return '<button class="card pad" data-open="' + r.date + '" style="display:block;width:100%;text-align:left;margin-bottom:.75rem">' +
+    '<div class="row-between"><h3>' + escapeHtml(prettyDate(r.date, { weekday: 'short', month: 'short', day: 'numeric' })) + '</h3>' + status + '</div>' +
+    '<div style="margin-top:.6rem;display:flex;flex-wrap:wrap;gap:.35rem">' + tags + '</div>' +
+    (r.evening && r.evening.note ? '<p class="note-text" style="margin-top:.7rem">' + escapeHtml(r.evening.note) + '</p>' : '') +
+    (r.morning
+      ? '<div class="metric-row" style="margin-top:1rem;gap:1.5rem">' +
+          '<div class="metric"><div class="k">Energy</div><div class="v t-num">' + r.morning.restedness + '<span class="t-fine">/10</span></div></div>' +
+          '<div class="metric"><div class="k">Sleep</div><div class="v t-num">' + r.morning.sleepQuality + '<span class="t-fine">/10</span></div></div>' +
+          '<div class="metric"><div class="k">Woke</div><div class="v">' + (r.morning.wokeDuringNight ? 'Yes' : 'No') + '</div></div>' +
+        '</div>'
+      : '') +
+  '</button>';
+}
+
+
+/* A quiet reminder that this journal has exactly one copy. Never a modal,
+   never guilt: a line in the journal after enough has accumulated to be
+   worth losing. */
+function backupNudge() {
+  if (records.length < 14) return '';
+  var last = settings.lastExportAt ? (Date.now() - new Date(settings.lastExportAt).getTime()) / 86400000 : null;
+  if (last !== null && last < 30) return '';
+  return '<div class="banner banner-info">' +
+    '<strong>' + records.length + ' nights live only in this browser.</strong> ' +
+    (last === null ? 'You have never exported a backup.' : 'Your last backup was ' + Math.round(last) + ' days ago.') +
+    ' <button class="btn btn-ghost btn-sm" id="nudge-export" style="padding:0;text-decoration:underline">Export now</button>' +
+  '</div>';
+}
+function calendarHtml() {
+  var y = calMonth.getFullYear(), m = calMonth.getMonth();
+  var first = new Date(y, m, 1), lastDay = new Date(y, m + 1, 0).getDate();
+  var offset = first.getDay();
+  var t = today();
+  var cells = '';
+  for (var i = 0; i < offset; i++) cells += '<div></div>';
+  for (var d = 1; d <= lastDay; d++) {
+    var iso = y + '-' + String(m + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+    var r = getRecord(iso);
+    var future = iso > t;
+    var cls = 'cal-day' + (r ? ' has-data' : '') + (iso === t ? ' is-today' : '');
+    var dot = r ? '<span class="cal-dot ' + (r.complete ? 'complete' : 'partial') + '"></span>' : '<span class="cal-dot" style="background:transparent"></span>';
+    cells += '<button class="' + cls + '" data-date="' + iso + '"' + (future || !r ? ' disabled' : '') +
+      ' aria-label="' + escapeHtml(prettyDate(iso, { month: 'long', day: 'numeric' })) + (r ? (r.complete ? ', complete' : ', incomplete') : ', no entry') + '">' +
+      '<span class="t-num">' + d + '</span>' + dot + '</button>';
+  }
+  var names = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+  return '<div class="card pad">' +
+    '<div class="row-between" style="margin-bottom:1rem">' +
+      '<button class="btn btn-ghost btn-sm" id="cal-prev" aria-label="Previous month">&larr;</button>' +
+      '<strong>' + calMonth.toLocaleDateString(undefined, { month: 'long', year: 'numeric' }) + '</strong>' +
+      '<button class="btn btn-ghost btn-sm" id="cal-next" aria-label="Next month">&rarr;</button>' +
+    '</div>' +
+    '<div class="cal-grid">' + names.map(function (n) { return '<div class="cal-head">' + n + '</div>'; }).join('') + '</div>' +
+    '<div class="cal-grid" style="margin-top:2px">' + cells + '</div>' +
+    '<div class="row" style="margin-top:1rem;gap:1rem">' +
+      '<span class="t-fine"><span class="cal-dot complete" style="display:inline-block;margin-right:4px"></span>Complete</span>' +
+      '<span class="t-fine"><span class="cal-dot partial" style="display:inline-block;margin-right:4px"></span>Half logged</span>' +
+    '</div>' +
+  '</div>';
+}
+function bindCalendar() {
+  document.getElementById('cal-prev').addEventListener('click', function () {
+    calMonth = new Date(calMonth.getFullYear(), calMonth.getMonth() - 1, 1); renderJournal();
+  });
+  document.getElementById('cal-next').addEventListener('click', function () {
+    calMonth = new Date(calMonth.getFullYear(), calMonth.getMonth() + 1, 1); renderJournal();
+  });
+  document.querySelectorAll('[data-date]').forEach(function (b) {
+    b.addEventListener('click', function () { pending = { kind: 'day', date: b.dataset.date }; render(); });
+  });
+}
+
+/* ---------- one day, with everything about it ---------- */
+function renderDay(date) {
+  var r = getRecord(date);
+  if (!r) { pending = null; return renderJournal(); }
+
+  root().innerHTML =
+    '<section class="stack-lg">' +
+      '<button class="btn btn-ghost" id="day-back" style="margin-left:-.75rem">&larr; Journal</button>' +
+      '<div>' +
+        '<h1>' + escapeHtml(prettyDate(date, { weekday: 'long', month: 'long', day: 'numeric' })) + '</h1>' +
+        '<p class="t-fine" style="margin-top:.35rem">' + escapeHtml(date) + '</p>' +
+      '</div>' +
+
+      (r.morning
+        ? '<div class="card pad"><div class="metric-row">' +
+            '<div class="metric"><div class="k">Energy</div><div class="v t-num">' + r.morning.restedness + '<span class="t-fine">/10</span></div></div>' +
+            '<div class="metric"><div class="k">Sleep</div><div class="v t-num">' + r.morning.sleepQuality + '<span class="t-fine">/10</span></div></div>' +
+            '<div class="metric"><div class="k">Habits</div><div class="v t-num">' + (r.evening ? r.evening.tags.length : 0) + '</div></div>' +
+          '</div>' +
+          (r.morning.lateEntry ? '<p class="t-fine" style="margin-top:.8rem">Rated later from memory.</p>' : '') +
+        '</div>'
+        : '<div class="card pad"><p class="t-small">No energy rating for this night yet.</p>' +
+          '<button class="btn btn-secondary btn-sm" id="day-morning" style="margin-top:1rem">Add it now</button></div>') +
+
+      '<div class="card pad">' +
+        '<p class="t-eyebrow">Habits</p>' +
+        '<div style="margin-top:.7rem;display:flex;flex-wrap:wrap;gap:.4rem">' +
+          (r.evening && r.evening.tags.length
+            ? r.evening.tags.map(function (t) { return '<span class="chip">' + escapeHtml(habitLabel(t)) + '</span>'; }).join('')
+            : '<span class="t-small">Nothing logged.</span>') +
+        '</div>' +
+        (r.evening && r.evening.note
+          ? '<hr class="divider" style="margin:1.2rem 0"><p class="t-eyebrow">Reflection</p><p class="note-text" style="margin-top:.5rem">' + escapeHtml(r.evening.note) + '</p>'
+          : '') +
+      '</div>' +
+
+      '<div class="row" style="flex-wrap:wrap">' +
+        '<button class="btn btn-secondary btn-sm" id="day-edit">Edit evening</button>' +
+        (r.morning ? '<button class="btn btn-secondary btn-sm" id="day-edit-m">Edit energy</button>' : '') +
+        '<button class="btn btn-ghost btn-sm btn-danger" id="day-delete">Delete night</button>' +
+      '</div>' +
+    '</section>';
+
+  document.getElementById('day-back').addEventListener('click', function () { pending = null; renderJournal(); });
+  document.getElementById('day-edit').addEventListener('click', function () { openCheckIn('evening', date); });
+  var em = document.getElementById('day-edit-m');
+  if (em) em.addEventListener('click', function () { openCheckIn('morning', date); });
+  var dm = document.getElementById('day-morning');
+  if (dm) dm.addEventListener('click', function () { openCheckIn('morning', date); });
+
+  document.getElementById('day-delete').addEventListener('click', function () {
+    confirmAction('Delete this night?', 'The habits, reflection and ratings for ' + prettyDate(date, { month: 'long', day: 'numeric' }) + ' will be removed. This cannot be undone.', 'Delete', function () {
+      records = records.filter(function (x) { return x.date !== date; });
+      saveData();
+      pending = null;
+      toast('Night deleted');
+      renderJournal();
+    });
+  });
+}
+
+/* A real confirmation step for anything destructive. */
+function confirmAction(title, body, verb, onYes) {
+  var prev = root().innerHTML;
+  root().innerHTML =
+    '<section class="stack-lg">' +
+      '<div class="card pad">' +
+        '<h2>' + escapeHtml(title) + '</h2>' +
+        '<p class="t-lead" style="margin-top:.6rem">' + escapeHtml(body) + '</p>' +
+        '<div class="row" style="margin-top:1.5rem">' +
+          '<button class="btn btn-secondary btn-sm" id="c-no">Cancel</button>' +
+          '<button class="btn btn-sm" id="c-yes" style="background:var(--danger);color:#fff">' + escapeHtml(verb) + '</button>' +
+        '</div>' +
+      '</div>' +
+    '</section>';
+  document.getElementById('c-no').addEventListener('click', function () { render(); });
+  document.getElementById('c-yes').addEventListener('click', onYes);
+}
+
+/* =====================================================================
+   INSIGHTS
+
+   Two layers, deliberately:
+
+   1. Local analysis — arithmetic over your own records, instant and free.
+      It runs every time you open the page and answers the ordinary
+      questions: how is energy trending, which habits am I consistent
+      with, what tends to happen on my best days.
+
+   2. The AI pass — on demand only, one week at a time, for the reading a
+      person would do rather than a calculator. It costs a request, so it
+      never runs on its own.
+
+   Both use the same evidence bar. A pattern needs at least 3 nights on
+   each side, a gap that scales with sample size, no overlap between the
+   two groups, and no other habit tracking the same nights. Restedness on
+   a 1-10 scale scatters with a standard deviation near 3, so small gaps
+   across a handful of nights are ordinary chance, not signal.
+   ===================================================================== */
+var MIN_NIGHTS = 7, WINDOW = 7;
+var API_URL = '/api/insights';
+var range = 30;                     // 7 | 30 | 90 | 0 (all time)
+
+function rangeLabel(n) { return n === 0 ? 'All time' : n + ' days'; }
+
+/* Complete nights inside the window, newest first. */
+function rangeRecords(n) {
+  var all = completeRecords();
+  if (!n) return all;
+  var cutoff = shiftDate(today(), -(n - 1));
+  return all.filter(function (r) { return r.date >= cutoff; });
+}
+/* The window immediately before it, for honest period-on-period comparison. */
+function priorRecords(n) {
+  if (!n) return [];
+  var end = shiftDate(today(), -n);
+  var start = shiftDate(today(), -(n * 2 - 1));
+  return completeRecords().filter(function (r) { return r.date >= start && r.date <= end; });
+}
+
+function mean(nums) { return nums.reduce(function (a, b) { return a + b; }, 0) / nums.length; }
+function energyOf(rs) { return rs.map(function (r) { return r.morning.restedness; }); }
 
 function renderInsights() {
   var done = completeRecords();
 
   if (done.length < MIN_NIGHTS) {
     var pct = Math.round((done.length / MIN_NIGHTS) * 100);
-    root.innerHTML =
-      '<div class="panel">' +
-        '<p class="eyebrow">Insights</p>' +
-        '<h2>' + done.length + ' of ' + MIN_NIGHTS + ' nights logged</h2>' +
-        '<div class="progress-track"><div class="progress-fill" style="width:' + pct + '%"></div></div>' +
-        '<p class="lede">Below seven complete nights there is not enough to separate a pattern from a coincidence, so this stays closed for now.</p>' +
-        '<p class="faint" style="margin-top:1rem">A night counts once it has both an evening entry and a morning rating.</p>' +
-      '</div>';
+    root().innerHTML =
+      '<section class="stack-lg">' +
+        '<h1>Insights</h1>' +
+        '<div class="card pad">' +
+          '<p class="t-eyebrow">Keep going</p>' +
+          '<h2 style="margin-top:.5rem" class="t-num">' + done.length + ' of ' + MIN_NIGHTS + ' nights logged</h2>' +
+          '<div style="height:6px;background:var(--surface-2);border-radius:999px;margin:1rem 0 .75rem;overflow:hidden">' +
+            '<div style="height:100%;width:' + pct + '%;background:var(--accent);border-radius:999px"></div>' +
+          '</div>' +
+          '<p class="t-small">Once you have a week of complete nights, Sustain can start looking for patterns. Below seven there is not enough here to tell a pattern from a coincidence.</p>' +
+        '</div>' +
+        (done.length ? energyPanel(done, []) : emptyInsights()) +
+      '</section>';
     return;
   }
 
-  var w = windowNights();
+  var rows = rangeRecords(range);
+  var prior = priorRecords(range);
 
-  root.innerHTML =
-    '<div class="panel">' +
-      '<p class="eyebrow">Insights</p>' +
-      '<h2>Look for patterns</h2>' +
-      '<p class="lede">Analyses your ' + w.length + ' most recent complete nights — ' +
-        escapeHtml(w[w.length - 1].date) + ' to ' + escapeHtml(w[0].date) +
-        '. The same week you can scroll through in the journal.</p>' +
-      '<div class="row mt2">' +
-        '<button class="btn-primary" id="run-insights">Analyse this week</button>' +
-        '<button class="btn-link" id="run-control">Run the noise check</button>' +
-      '</div>' +
-      '<p class="faint" style="margin-top:1rem">Each analysis is saved below, so you can look back at what a past week told you. The noise check sends randomly generated nights instead of yours and is never saved.</p>' +
-    '</div>' +
-    '<div id="insight-out" class="mt2"></div>' +
-    '<div id="insight-history"></div>';
+  root().innerHTML =
+    '<section class="stack-lg">' +
+      '<div class="row-between"><h1>Insights</h1></div>' +
+      rangeSwitcher() +
+      (rows.length < 2
+        ? '<div class="card pad empty"><h3>Nothing in this window</h3><p class="t-small" style="margin-top:.5rem">You have complete nights, but none inside the last ' + range + ' days. Try a wider range.</p></div>'
+        : energyPanel(rows, prior) + habitPanel(rows) + patternPanel(rows) + weeklyReview()) +
+      aiPanel(done) +
+      '<div id="insight-out"></div>' +
+      historyHtml() +
+    '</section>';
 
-  document.getElementById('run-insights').addEventListener('click', function () { runInsights(false); });
-  document.getElementById('run-control').addEventListener('click', function () { runInsights(true); });
-  refreshHistory();
+  document.querySelectorAll('[data-range]').forEach(function (b) {
+    b.addEventListener('click', function () { range = Number(b.dataset.range); renderInsights(); });
+  });
+  var run = document.getElementById('run-insights');
+  if (run) {
+    run.addEventListener('click', function () { runInsights(false); });
+    document.getElementById('run-control').addEventListener('click', function () { runInsights(true); });
+  }
 }
 
-/* The seven most recent complete nights, newest first — the same window the
-   journal shows, so an insight can be checked against the entries above it. */
-function windowNights() { return completeRecords().slice(0, WINDOW); }
-
-function refreshHistory() {
-  var el = document.getElementById('insight-history');
-  if (!el) return;
-  if (!insights.length) { el.innerHTML = ''; return; }
-  el.innerHTML = '<p class="eyebrow mt2">Saved insights</p>' +
-    insights.slice().reverse().map(savedInsightHtml).join('');
+function emptyInsights() {
+  return '<div class="card pad empty"><h3>Your patterns will appear here.</h3>' +
+    '<p class="t-small" style="margin-top:.5rem">Keep logging your days and Sustain will start finding connections in your data.</p></div>';
 }
 
-function savedInsightHtml(entry) {
-  var when = new Date(entry.runAt);
-  var body = entry.patterns.length
-    ? entry.patterns.map(function (p) {
-        var conf = ['high', 'medium', 'low'].indexOf(p.confidence) >= 0 ? p.confidence : 'low';
-        return '<div style="margin-top:1rem">' +
-          '<h4 style="margin:0 0 .35rem;font-size:1rem;font-weight:600;line-height:1.45">' + escapeHtml(String(p.claim || '')) + '</h4>' +
-          '<p class="ev" style="margin:0">' + escapeHtml(String(p.evidence || '')) + '</p>' +
-          '<span class="conf ' + conf + '">' + conf + ' confidence</span></div>';
-      }).join('')
-    : '<p class="faint" style="margin-top:.8rem">Not enough signal in these nights.</p>';
-
-  return '<div class="entry">' +
-    '<div class="entry-date">' +
-      '<h3>' + escapeHtml(entry.from) + ' &rarr; ' + escapeHtml(entry.to) + '</h3>' +
-      '<span class="pill late">' + escapeHtml(when.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })) + '</span>' +
-    '</div>' +
-    '<p class="faint" style="margin:0">' + entry.nightCount + ' nights analysed</p>' +
-    body +
-    (entry.note ? '<p class="faint" style="margin-top:1rem">' + escapeHtml(entry.note) + '</p>' : '') +
+function rangeSwitcher() {
+  return '<div class="row" role="group" aria-label="Time range" style="gap:.4rem;flex-wrap:wrap">' +
+    [7, 30, 90, 0].map(function (n) {
+      var on = range === n;
+      return '<button class="btn btn-sm ' + (on ? 'btn-primary' : 'btn-secondary') + '" data-range="' + n +
+        '" aria-pressed="' + on + '" style="width:auto">' + rangeLabel(n) + '</button>';
+    }).join('') +
   '</div>';
 }
 
-/* Only the fields that matter are sent: no free-text notes beyond what the
-   user wrote, no account details, and only complete nights. */
+/* ---------- energy ---------- */
+function energyPanel(rows, prior) {
+  var vals = energyOf(rows);
+  var avg = mean(vals);
+  var delta = prior.length >= 3 ? avg - mean(energyOf(prior)) : null;
+
+  var trendLine = '';
+  if (delta !== null) {
+    var word = Math.abs(delta) < 0.3 ? 'about the same as' : (delta > 0 ? 'higher than' : 'lower than');
+    trendLine = '<p class="t-small" style="margin-top:1rem">Your average energy was <strong>' + word +
+      '</strong> the previous ' + range + ' days' +
+      (Math.abs(delta) >= 0.3 ? ' <span class="t-num">(' + (delta > 0 ? '+' : '') + delta.toFixed(1) + ')</span>' : '') + '.</p>';
+  } else if (range) {
+    trendLine = '<p class="t-fine" style="margin-top:1rem">Not enough history yet to compare with the previous ' + range + ' days.</p>';
+  }
+
+  return '<div class="card pad">' +
+    '<p class="t-eyebrow">Energy</p>' +
+    '<div class="metric-row" style="margin-top:.8rem">' +
+      '<div class="metric"><div class="k">Average</div><div class="v t-num">' + avg.toFixed(1) + '</div></div>' +
+      '<div class="metric"><div class="k">Highest</div><div class="v t-num">' + Math.max.apply(null, vals) + '</div></div>' +
+      '<div class="metric"><div class="k">Lowest</div><div class="v t-num">' + Math.min.apply(null, vals) + '</div></div>' +
+      '<div class="metric"><div class="k">Nights</div><div class="v t-num">' + rows.length + '</div></div>' +
+    '</div>' +
+    trendLine +
+    chartHtml(rows.slice().reverse()) +
+  '</div>';
+}
+
+function chartHtml(rows) {
+  if (rows.length < 2) return '';
+  var W = 320, H = 90, PAD = 4;
+  var n = rows.length;
+  var x = function (i) { return PAD + (i / (n - 1)) * (W - PAD * 2); };
+  var y = function (v) { return PAD + (1 - (v - 1) / 9) * (H - PAD * 2); };
+  var line = rows.map(function (r, i) { return (i ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(r.morning.restedness).toFixed(1); }).join(' ');
+  var area = line + ' L' + x(n - 1).toFixed(1) + ' ' + (H - PAD) + ' L' + PAD + ' ' + (H - PAD) + ' Z';
+  var avgY = y(mean(energyOf(rows))).toFixed(1);
+  return '<figure style="margin:1.25rem 0 0">' +
+    '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" height="90" preserveAspectRatio="none" role="img" aria-label="Your energy across ' + n + ' complete nights, averaging ' + mean(energyOf(rows)).toFixed(1) + ' out of 10">' +
+      '<defs><linearGradient id="eg" x1="0" y1="0" x2="0" y2="1">' +
+        '<stop offset="0%" stop-color="var(--accent)" stop-opacity=".22"/><stop offset="100%" stop-color="var(--accent)" stop-opacity="0"/>' +
+      '</linearGradient></defs>' +
+      '<line x1="' + PAD + '" y1="' + avgY + '" x2="' + (W - PAD) + '" y2="' + avgY + '" stroke="var(--line-2)" stroke-width="1" stroke-dasharray="3 3" vector-effect="non-scaling-stroke"/>' +
+      '<path d="' + area + '" fill="url(#eg)"/>' +
+      '<path d="' + line + '" fill="none" stroke="var(--accent)" stroke-width="1.8" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"/>' +
+    '</svg>' +
+    '<figcaption class="t-fine" style="margin-top:.4rem">' + n + ' nights &middot; dashed line is your average</figcaption>' +
+  '</figure>';
+}
+
+/* ---------- habit consistency ---------- */
+function habitPanel(rows) {
+  var logged = sortedRecords().filter(function (r) {
+    if (!r.evening) return false;
+    if (!range) return true;
+    return r.date >= shiftDate(today(), -(range - 1));
+  });
+  if (logged.length < 3) return '';
+
+  var stats = activeHabits().map(function (h) {
+    var c = logged.filter(function (r) { return r.evening.tags.indexOf(h.id) >= 0; }).length;
+    return { label: h.label, count: c, total: logged.length };
+  }).sort(function (a, b) { return b.count - a.count; });
+  if (!stats.length) return '';
+
+  return '<div class="card pad">' +
+    '<p class="t-eyebrow">Habits</p>' +
+    '<p class="t-small" style="margin-top:.4rem">Across your last ' + logged.length + ' logged days.</p>' +
+    '<div style="margin-top:1rem">' +
+      stats.map(function (r) {
+        var pct = Math.round((r.count / r.total) * 100);
+        return '<div style="margin-top:.85rem">' +
+          '<div class="row-between"><span>' + escapeHtml(r.label) + '</span>' +
+          '<span class="t-fine t-num">' + r.count + ' / ' + r.total + ' days</span></div>' +
+          '<div style="height:5px;background:var(--surface-2);border-radius:999px;margin-top:.35rem;overflow:hidden">' +
+            '<div style="height:100%;width:' + pct + '%;background:var(--sage);border-radius:999px"></div>' +
+          '</div>' +
+        '</div>';
+      }).join('') +
+    '</div>' +
+  '</div>';
+}
+
+/* ---------- local pattern detection ----------
+   Same bar the AI prompt is held to, computed here so the ordinary case
+   costs nothing and works offline. Language stays observational: these
+   are things you reported, not things that were proven. */
+function requiredGap(n) { return n < 14 ? 4.0 : 1.5; }
+function confidenceFor(n, withN, withoutN, gap) {
+  if (n < 14) return 'low';
+  if (n < 21) return (withN >= 5 && withoutN >= 5 && gap >= 1.5) ? 'medium' : 'low';
+  return (withN >= 7 && withoutN >= 7 && gap >= 2.0) ? 'high' : 'medium';
+}
+
+function localPatterns(rows) {
+  var n = rows.length;
+  if (n < MIN_NIGHTS) return [];
+  var found = [];
+
+  activeHabits().forEach(function (h) {
+    var withH = rows.filter(function (r) { return r.evening.tags.indexOf(h.id) >= 0; });
+    var without = rows.filter(function (r) { return r.evening.tags.indexOf(h.id) < 0; });
+    if (withH.length < 3 || without.length < 3) return;
+
+    var a = energyOf(withH), b = energyOf(without);
+    var gap = mean(a) - mean(b);
+    if (Math.abs(gap) < requiredGap(n)) return;
+
+    // Overlap test: if the groups interleave, one or two outliers are
+    // doing the work and this is not a pattern.
+    var separated = gap > 0 ? Math.min.apply(null, a) > Math.max.apply(null, b)
+                            : Math.max.apply(null, a) < Math.min.apply(null, b);
+    if (!separated && n < 14) return;
+
+    // Confounding: another habit sitting on nearly the same nights means
+    // the two cannot be told apart.
+    var twins = activeHabits().filter(function (o) {
+      if (o.id === h.id) return false;
+      var same = rows.filter(function (r) {
+        return (r.evening.tags.indexOf(o.id) >= 0) === (r.evening.tags.indexOf(h.id) >= 0);
+      }).length;
+      return same / n >= 0.85;
+    }).map(function (o) { return o.label; });
+
+    found.push({
+      label: h.label,
+      gap: gap,
+      withN: withH.length,
+      withoutN: without.length,
+      withAvg: mean(a),
+      withoutAvg: mean(b),
+      twins: twins,
+      confidence: confidenceFor(n, withH.length, without.length, Math.abs(gap))
+    });
+  });
+
+  return found.sort(function (x, y) { return Math.abs(y.gap) - Math.abs(x.gap); }).slice(0, 3);
+}
+
+function patternPanel(rows) {
+  var found = localPatterns(rows);
+
+  if (!found.length) {
+    var need = Math.max(0, 14 - rows.length);
+    return '<div class="card pad">' +
+      '<p class="t-eyebrow">Patterns</p>' +
+      '<h3 style="margin-top:.5rem">Nothing stands out yet</h3>' +
+      '<p class="t-small" style="margin-top:.5rem">' +
+        (need > 0
+          ? 'Keep logging for about another ' + need + ' days and Sustain will have enough to look properly. Below two weeks, differences this size are what random variation looks like.'
+          : 'Across these nights, no habit separates your energy clearly enough to be worth calling a pattern. That is a normal and honest result.') +
+      '</p>' +
+      '<p class="t-fine" style="margin-top:.8rem">Variety helps: habits you do every day, or never, give nothing to compare.</p>' +
+    '</div>';
+  }
+
+  return '<div>' +
+    '<p class="t-eyebrow" style="margin-bottom:.75rem">Patterns</p>' +
+    found.map(function (p) {
+      var dir = p.gap > 0 ? 'higher' : 'lower';
+      return '<div class="card pad" style="margin-bottom:.75rem">' +
+        '<h3>You tend to report ' + dir + ' energy on days with ' + escapeHtml(p.label.toLowerCase()) + '.</h3>' +
+        '<p class="t-small" style="margin-top:.5rem">' +
+          'Averaged <span class="t-num">' + p.withAvg.toFixed(1) + '</span> across ' + p.withN +
+          ' days with it, against <span class="t-num">' + p.withoutAvg.toFixed(1) + '</span> across ' + p.withoutN + ' days without.' +
+          (p.twins.length ? ' This travels with ' + escapeHtml(p.twins.join(' and ').toLowerCase()) + ', so their effects cannot be separated.' : '') +
+        '</p>' +
+        '<span class="pill ' + (p.confidence === 'low' ? 'pill-late' : 'pill-done') + '" style="margin-top:.9rem">' + p.confidence + ' confidence</span>' +
+      '</div>';
+    }).join('') +
+    '<p class="t-fine">Observations from your own log. They describe what you reported, not what caused it.</p>' +
+  '</div>';
+}
+
+/* ---------- weekly review ---------- */
+function weeklyReview() {
+  var thisWeek = completeRecords().filter(function (r) { return r.date >= shiftDate(today(), -6); });
+  if (thisWeek.length < 4) return '';
+  var lastWeek = completeRecords().filter(function (r) {
+    return r.date >= shiftDate(today(), -13) && r.date <= shiftDate(today(), -7);
+  });
+
+  var loggedThis = records.filter(function (r) { return r.date >= shiftDate(today(), -6) && r.evening; });
+  var avg = mean(energyOf(thisWeek));
+  var notes = loggedThis.filter(function (r) { return r.evening.note; }).length;
+  var slots = loggedThis.reduce(function (s, r) { return s + activeHabits().length; }, 0);
+  var hits = loggedThis.reduce(function (s, r) { return s + r.evening.tags.length; }, 0);
+  var consistency = slots ? Math.round((hits / slots) * 100) : 0;
+
+  var stood = [];
+  var best = thisWeek.slice().sort(function (a, b) { return b.morning.restedness - a.morning.restedness; })[0];
+  if (best && best.evening.tags.length) {
+    stood.push('Your highest-energy night was ' + prettyDate(best.date, { weekday: 'long' }).toLowerCase() +
+      ' at ' + best.morning.restedness + '/10, after ' + best.evening.tags.map(habitLabel).join(', ').toLowerCase() + '.');
+  }
+  if (lastWeek.length >= 3) {
+    var d = avg - mean(energyOf(lastWeek));
+    stood.push(Math.abs(d) < 0.3
+      ? 'Your energy held steady compared with last week.'
+      : 'Your average energy was ' + (d > 0 ? 'higher' : 'lower') + ' than last week (' + (d > 0 ? '+' : '') + d.toFixed(1) + ').');
+  }
+  var spread = Math.max.apply(null, energyOf(thisWeek)) - Math.min.apply(null, energyOf(thisWeek));
+  if (spread >= 4) stood.push('Your energy swung by ' + spread + ' points across the week, so something is varying a lot.');
+
+  // One gentle suggestion, always drawn from the user's own data.
+  var suggestion;
+  var rare = activeHabits().map(function (h) {
+    return { label: h.label, n: loggedThis.filter(function (r) { return r.evening.tags.indexOf(h.id) >= 0; }).length };
+  }).filter(function (x) { return x.n > 0 && x.n <= 2; }).sort(function (a, b) { return a.n - b.n; })[0];
+  var missingMornings = records.filter(function (r) { return r.date >= shiftDate(today(), -6) && r.evening && !r.morning; }).length;
+
+  if (missingMornings >= 2) suggestion = 'Try catching the morning check-in before noon — ' + missingMornings + ' nights this week are missing their rating, and a night only counts once it has both halves.';
+  else if (rare) suggestion = 'You logged ' + rare.label.toLowerCase() + ' on only ' + rare.n + (rare.n === 1 ? ' day' : ' days') + ' this week. A few more would give Sustain something to compare it against.';
+  else suggestion = 'Keep logging as you are. Another week at this rate and the patterns section will have real material to work with.';
+
+  return '<div class="card pad">' +
+    '<p class="t-eyebrow">Your week</p>' +
+    '<div class="metric-row" style="margin-top:.8rem">' +
+      '<div class="metric"><div class="k">Avg energy</div><div class="v t-num">' + avg.toFixed(1) + '<span class="t-fine">/10</span></div></div>' +
+      '<div class="metric"><div class="k">Habit rate</div><div class="v t-num">' + consistency + '%</div></div>' +
+      '<div class="metric"><div class="k">Reflections</div><div class="v t-num">' + notes + '</div></div>' +
+    '</div>' +
+    (stood.length
+      ? '<hr class="divider" style="margin:1.25rem 0"><p class="t-eyebrow">What stood out</p>' +
+        stood.map(function (s) { return '<p class="t-small" style="margin-top:.5rem">' + escapeHtml(s) + '</p>'; }).join('')
+      : '') +
+    '<hr class="divider" style="margin:1.25rem 0">' +
+    '<p class="t-eyebrow">One thing to try</p>' +
+    '<p class="t-small" style="margin-top:.5rem">' + escapeHtml(suggestion) + '</p>' +
+  '</div>';
+}
+
+/* ---------- the AI pass ---------- */
+function aiPanel(done) {
+  return '<div class="card pad">' +
+    '<p class="t-eyebrow">A closer read</p>' +
+    '<h3 style="margin-top:.5rem">Ask Sustain to look again</h3>' +
+    '<p class="t-small" style="margin-top:.5rem">Everything above is arithmetic on your own device. This sends your last ' +
+      Math.min(done.length, WINDOW) + ' complete nights for a closer reading — combinations of habits, and your written reflections, which the numbers above cannot see.</p>' +
+    '<button class="btn btn-primary" id="run-insights" style="margin-top:1.25rem">Look for patterns</button>' +
+    '<button class="btn btn-ghost btn-sm" id="run-control" style="margin-top:.5rem;width:100%">Run the noise check</button>' +
+  '</div>';
+}
+
 function buildPayload(useRandom) {
   if (useRandom) return randomNights(WINDOW);
   return completeRecords().slice(0, WINDOW).map(function (r) {
@@ -1216,18 +2017,13 @@ function buildPayload(useRandom) {
     };
   });
 }
-
-/* Deliberately structureless data for testing the prompt: tags and ratings
-   are drawn independently, so any "pattern" reported back is invented. */
 function randomNights(n) {
-  var ids = PRESET_TAGS.map(function (t) { return t.id; });
-  var out = [];
-  var d = isoDate(new Date());
+  var ids = habits.map(function (h) { return h.id; });
+  var out = [], d = today();
   for (var i = 0; i < n; i++) {
-    var tags = ids.filter(function () { return Math.random() < 0.4; });
     out.push({
       date: shiftDate(d, -i - 1),
-      tags: tags,
+      tags: ids.filter(function () { return Math.random() < 0.4; }),
       note: '',
       sleepQuality: 1 + Math.floor(Math.random() * 10),
       restedness: 1 + Math.floor(Math.random() * 10),
@@ -1240,44 +2036,38 @@ function randomNights(n) {
 
 function runInsights(useRandom) {
   var out = document.getElementById('insight-out');
-  out.innerHTML = '<div class="panel"><span class="spinner"></span><span class="muted">Reading your nights…</span></div>';
+  out.innerHTML = '<div class="card pad"><div class="row"><span class="spinner"></span><span class="t-small">Reading your nights…</span></div>' +
+    '<div class="skeleton" style="height:14px;margin-top:1rem"></div>' +
+    '<div class="skeleton" style="height:14px;width:70%;margin-top:.5rem"></div></div>';
   clearError();
 
   var payload = buildPayload(useRandom);
-
   callInsights(payload, useRandom)
     .then(function (result) {
       if (useRandom) return renderPatterns(result, true, payload.length);
-
-      // A real analysis is kept, the way a journal entry is: the week it
-      // covered, what it found, and when it was run.
-      var w = windowNights();
-      insights.push({
+      var w = completeRecords().slice(0, WINDOW);
+      insights.unshift({
         id: 'i' + Date.now().toString(36),
         runAt: new Date().toISOString(),
-        from: w[w.length - 1].date,
-        to: w[0].date,
-        nightCount: w.length,
+        from: w[w.length - 1].date, to: w[0].date, nightCount: w.length,
         patterns: Array.isArray(result.patterns) ? result.patterns : [],
         insufficientData: !!result.insufficientData,
         note: result.note || ''
       });
       saveData();
-      out.innerHTML = '<div class="banner info">Saved to your insights below.</div>';
-      refreshHistory();
+      toast('Saved to your insights');
+      renderInsights();
     })
     .catch(function (err) {
       out.innerHTML =
-        '<div class="banner error">Could not complete the analysis: ' + escapeHtml(err.message) + '</div>' +
-        '<div class="panel"><p class="muted">Your journal is untouched — nothing was saved or lost. Try again in a moment.</p>' +
-        '<div class="row mt2"><button class="btn-quiet" id="retry">Try again</button></div></div>';
-      var retry = document.getElementById('retry');
-      if (retry) retry.addEventListener('click', function () { runInsights(useRandom); });
+        '<div class="banner banner-error">' + escapeHtml(err.message) + '</div>' +
+        '<div class="card pad" style="margin-top:.75rem"><p class="t-small">Your journal is untouched — nothing was saved or lost.</p>' +
+        '<button class="btn btn-secondary btn-sm" id="retry" style="margin-top:1rem">Try again</button></div>';
+      var r = document.getElementById('retry');
+      if (r) r.addEventListener('click', function () { runInsights(useRandom); });
     });
 }
 
-/* One request, and the function hands back the parsed object directly —
-   the JSON parsing and the Anthropic call both happen server-side. */
 function callInsights(nights, control) {
   return fetch(API_URL, {
     method: 'POST',
@@ -1285,76 +2075,417 @@ function callInsights(nights, control) {
     body: JSON.stringify({ nights: nights, control: !!control })
   }).then(function (res) {
     return res.json()
-      .catch(function () { throw new Error('The server replied with something unreadable (HTTP ' + res.status + ').'); })
+      .catch(function () { throw new Error('The server replied with something unreadable. Please try again.'); })
       .then(function (data) {
-        if (!res.ok) throw new Error(data && data.error ? data.error : 'HTTP ' + res.status);
+        if (!res.ok) throw new Error(friendlyApiError(res.status, data && data.error));
         return data;
       });
+  }).catch(function (err) {
+    if (err instanceof TypeError) throw new Error('No connection. A closer read needs the internet — everything else in Sustain works offline.');
+    throw err;
   });
 }
+function friendlyApiError(status, msg) {
+  if (status === 429) return 'That is a lot of analyses at once. Give it a minute and try again.';
+  if (status === 500 && /ANTHROPIC_API_KEY/.test(String(msg))) return 'A closer read is not configured on this deployment yet.';
+  if (status >= 500) return 'Sustain could not reach the analysis service. Please try again shortly.';
+  return msg || 'Something went wrong running the analysis.';
+}
+
 function renderPatterns(result, wasControl, n) {
   var out = document.getElementById('insight-out');
   var patterns = Array.isArray(result.patterns) ? result.patterns : [];
-
   var header = wasControl
-    ? '<div class="banner info"><strong>Noise check</strong> — ' + n + ' randomly generated nights. ' +
-      (patterns.length === 0
-        ? 'Nothing was reported, which is the correct answer.'
-        : 'It reported ' + patterns.length + ' pattern' + (patterns.length === 1 ? '' : 's') + ' in random data, so the prompt is still too eager.') +
-      '</div>'
+    ? '<div class="banner banner-info" style="margin-bottom:.75rem"><strong>Noise check</strong> — ' + n + ' randomly generated nights. ' +
+      (patterns.length === 0 ? 'Nothing was reported, which is the correct answer.'
+        : 'It reported ' + patterns.length + ' pattern' + (patterns.length === 1 ? '' : 's') + ' in random data, so the prompt is still too eager.') + '</div>'
     : '';
+  out.innerHTML = header + (patterns.length ? patterns.map(patternCard).join('') :
+    '<div class="card pad empty"><h3>Not enough signal yet</h3><p class="t-small" style="margin-top:.5rem">' +
+    escapeHtml(result.note || 'Nothing in this week clears the bar for a real pattern.') + '</p></div>');
+}
 
-  if (!patterns.length) {
-    out.innerHTML = header +
-      '<div class="panel">' +
-        '<p class="eyebrow">Result</p>' +
-        '<h2>Not enough signal yet</h2>' +
-        '<p class="lede">' + escapeHtml(result.note || 'Nothing in the log clears the bar for a real pattern.') + '</p>' +
-        '<p class="faint" style="margin-top:1rem">More nights, especially varied ones, give this more to work with.</p>' +
-      '</div>';
-    return;
-  }
+function patternCard(p) {
+  var conf = ['high', 'medium', 'low'].indexOf(p.confidence) >= 0 ? p.confidence : 'low';
+  return '<div class="card pad" style="margin-bottom:.75rem">' +
+    '<h3>' + escapeHtml(p.claim) + '</h3>' +
+    '<p class="t-small" style="margin-top:.5rem">' + escapeHtml(p.evidence) + '</p>' +
+    '<span class="pill ' + (conf === 'low' ? 'pill-late' : 'pill-done') + '" style="margin-top:.9rem">' + conf + ' confidence</span>' +
+  '</div>';
+}
 
-  out.innerHTML = header +
-    patterns.map(function (p) {
-      var conf = ['high', 'medium', 'low'].indexOf(p.confidence) >= 0 ? p.confidence : 'low';
-      return '<div class="pattern">' +
-        '<h4>' + escapeHtml(String(p.claim || '')) + '</h4>' +
-        '<p class="ev">' + escapeHtml(String(p.evidence || '')) + '</p>' +
-        '<span class="conf ' + conf + '">' + conf + ' confidence</span>' +
+function historyHtml() {
+  if (!insights.length) return '';
+  return '<div><p class="t-eyebrow" style="margin-bottom:.75rem">Saved readings</p>' +
+    insights.slice(0, 12).map(function (i) {
+      return '<div class="card pad" style="margin-bottom:.75rem">' +
+        '<div class="row-between"><strong class="t-num">' + escapeHtml(i.from) + ' → ' + escapeHtml(i.to) + '</strong>' +
+        '<span class="t-fine">' + escapeHtml(new Date(i.runAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })) + '</span></div>' +
+        (i.patterns.length
+          ? i.patterns.map(function (p) { return '<p style="margin-top:.7rem">' + escapeHtml(p.claim) + '</p><p class="t-fine" style="margin-top:.25rem">' + escapeHtml(p.evidence) + '</p>'; }).join('')
+          : '<p class="t-small" style="margin-top:.7rem">No pattern cleared the bar that week.</p>') +
       '</div>';
-    }).join('') +
-    (result.note ? '<p class="faint" style="margin-top:1.2rem">' + escapeHtml(result.note) + '</p>' : '');
+    }).join('') + '</div>';
 }
 
 /* =====================================================================
-   HELPERS + BOOT
+   SETTINGS
    ===================================================================== */
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, function (c) {
-    return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c];
+function renderSettings() {
+  if (pending && pending.kind === 'habits') return renderHabitManager();
+
+  var theme = currentTheme();
+  var notifSupported = 'Notification' in window;
+  var notifPerm = notifSupported ? Notification.permission : 'unsupported';
+  var lastExport = settings.lastExportAt ? new Date(settings.lastExportAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : null;
+  root().innerHTML =
+    '<section class="stack-lg">' +
+      '<h1>Settings</h1>' +
+
+      '<div class="card pad">' +
+        '<p class="t-eyebrow">Account</p>' +
+        '<p style="margin-top:.6rem">Signed in as <strong>' + escapeHtml(session.username) + '</strong></p>' +
+        '<button class="btn btn-secondary btn-sm" id="s-signout" style="margin-top:1rem">Sign out</button>' +
+      '</div>' +
+
+      '<div class="card pad">' +
+        '<div class="row-between"><div><p class="t-eyebrow">Habits</p>' +
+        '<p class="t-small" style="margin-top:.4rem">' + activeHabits().length + ' active</p></div>' +
+        '<button class="btn btn-secondary btn-sm" id="s-habits">Manage</button></div>' +
+      '</div>' +
+
+      '<div class="card pad">' +
+        '<p class="t-eyebrow">Appearance</p>' +
+        '<div class="row" style="margin-top:.9rem;flex-wrap:wrap">' +
+          ['system', 'light', 'dark'].map(function (t) {
+            return '<button class="btn btn-sm ' + (theme === t ? 'btn-primary' : 'btn-secondary') +
+              '" data-theme-set="' + t + '" style="width:auto">' + t.charAt(0).toUpperCase() + t.slice(1) + '</button>';
+          }).join('') +
+        '</div>' +
+      '</div>' +
+
+      '<div class="card pad">' +
+        '<p class="t-eyebrow">Reminders</p>' +
+        '<p class="t-small" style="margin-top:.5rem">Two check-ins a day only works if something nudges you. Choose your times, then add them to your calendar.</p>' +
+        '<div class="row" style="margin-top:1rem;gap:1rem;align-items:flex-end">' +
+          '<div style="flex:1"><label class="t-fine" for="rem-eve">Evening</label>' +
+          '<input type="time" id="rem-eve" value="' + escapeHtml(settings.remindEvening) + '"></div>' +
+          '<div style="flex:1"><label class="t-fine" for="rem-mor">Morning</label>' +
+          '<input type="time" id="rem-mor" value="' + escapeHtml(settings.remindMorning) + '"></div>' +
+        '</div>' +
+        '<button class="btn btn-secondary btn-sm" id="s-cal" style="margin-top:1rem">Add to my calendar</button>' +
+        (notifPerm === 'granted'
+          ? '<p class="t-fine" style="margin-top:.9rem">Browser notifications are on, and fire while Sustain is open.</p>'
+          : notifSupported
+            ? '<button class="btn btn-ghost btn-sm" id="s-notif" style="margin-top:.5rem;width:100%">Also notify me in the browser</button>'
+            : '') +
+        '<p class="t-fine" style="margin-top:.9rem">The calendar file is the dependable one: it repeats daily and works whether or not Sustain is open. Browser notifications only fire while this app is running.</p>' +
+      '</div>' +
+
+      '<div class="card pad">' +
+        '<p class="t-eyebrow">Your data</p>' +
+        '<p class="t-small" style="margin-top:.5rem">Everything you log stays in this browser. Nothing is uploaded, and there is no account on any server — which also means a cleared cache would take your journal with it. Export regularly.</p>' +
+        '<p class="t-small" style="margin-top:.6rem">The one exception: when you press <em>Look for patterns</em>, that week of nights is sent for analysis. Nothing else ever leaves the device.</p>' +
+        '<p class="t-fine" style="margin-top:.7rem">' + (lastExport ? 'Last exported ' + escapeHtml(lastExport) + '.' : 'You have never exported a backup.') + '</p>' +
+        '<div class="row" style="margin-top:1.2rem;flex-wrap:wrap">' +
+          '<button class="btn btn-secondary btn-sm" id="s-export">Export</button>' +
+          '<button class="btn btn-secondary btn-sm" id="s-import">Import</button>' +
+        '</div>' +
+      '</div>' +
+
+      '<div class="card pad">' +
+        '<p class="t-eyebrow">Danger zone</p>' +
+        '<p class="t-small" style="margin-top:.5rem">Deleting your account removes every night, habit and insight stored for ' + escapeHtml(session.username) + ' on this device.</p>' +
+        '<button class="btn btn-ghost btn-sm btn-danger" id="s-delete" style="margin-top:1rem;padding-left:0">Delete my account and data</button>' +
+      '</div>' +
+
+      '<p class="t-fine" style="text-align:center">Build a life you can sustain.</p>' +
+    '</section>';
+
+  document.getElementById('s-signout').addEventListener('click', signOut);
+  document.getElementById('s-habits').addEventListener('click', function () { pending = { kind: 'habits' }; render(); });
+  document.getElementById('s-cal').addEventListener('click', downloadReminders);
+  ['rem-eve', 'rem-mor'].forEach(function (id) {
+    document.getElementById(id).addEventListener('change', function () {
+      settings.remindEvening = document.getElementById('rem-eve').value || '21:00';
+      settings.remindMorning = document.getElementById('rem-mor').value || '07:30';
+      saveData();
+      scheduleReminders();
+      toast('Reminder times saved');
+    });
+  });
+  var notifBtn = document.getElementById('s-notif');
+  if (notifBtn) {
+    // Permission is only ever requested from a click: prompting on load
+    // gets blocked by browsers and resented by people.
+    notifBtn.addEventListener('click', function () {
+      Notification.requestPermission().then(function (p) {
+        settings.notifications = p === 'granted';
+        saveData();
+        scheduleReminders();
+        if (p !== 'granted') toast('Your browser blocked notifications.');
+        renderSettings();
+      });
+    });
+  }
+  document.getElementById('s-export').addEventListener('click', exportData);
+  document.getElementById('s-import').addEventListener('click', openImport);
+  document.querySelectorAll('[data-theme-set]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      writeJSON(K_THEME, b.dataset.themeSet);
+      applyTheme(b.dataset.themeSet);
+      renderSettings();
+    });
+  });
+  document.getElementById('s-delete').addEventListener('click', function () {
+    confirmAction('Delete your account?', 'Every night, habit and saved insight for ' + session.username + ' will be permanently removed from this device.', 'Delete everything', function () {
+      try {
+        localStorage.removeItem(dataKey());
+        writeJSON(K_USERS, getUsers().filter(function (u) { return u.id !== session.id; }));
+      } catch (err) {}
+      signOut();
+    });
   });
 }
-function escapeAttr(s) { return escapeHtml(s); }
 
+function renderHabitManager() {
+  var active = activeHabits();
+  root().innerHTML =
+    '<section class="stack-lg">' +
+      '<button class="btn btn-ghost" id="h-back" style="margin-left:-.75rem">&larr; Settings</button>' +
+      '<div>' +
+        '<h1>Habits</h1>' +
+        '<p class="t-lead" style="margin-top:.5rem">Track a handful you care about. Fewer habits, logged honestly, tell you more than a long list.</p>' +
+      '</div>' +
+
+      '<div>' +
+        '<div class="row-between section-head"><h2>Active</h2><span class="t-fine t-num">' + active.length + ' of ' + MAX_ACTIVE + '</span></div>' +
+        (active.length ? '<div id="h-active"></div>'
+          : '<div class="card pad empty"><h3>No active habits</h3><p class="t-small" style="margin-top:.5rem">Turn some on below.</p></div>') +
+      '</div>' +
+
+      '<div>' +
+        '<label class="t-eyebrow" for="h-new" style="display:block;margin-bottom:.6rem">Add your own</label>' +
+        '<div class="row"><input type="text" id="h-new" maxlength="40" placeholder="e.g. Walk after dinner">' +
+        '<button class="btn btn-secondary btn-sm" id="h-add" style="flex:none">Add</button></div>' +
+      '</div>' +
+
+      '<div>' +
+        '<h2 class="section-head">Not tracking</h2>' +
+        '<div id="h-archived"></div>' +
+      '</div>' +
+    '</section>';
+
+  document.getElementById('h-back').addEventListener('click', function () { pending = null; render(); });
+
+  function row(h, isActive) {
+    return '<div class="card pad" style="padding:.75rem;margin-bottom:.5rem">' +
+      '<div class="row-between">' +
+        '<span>' + escapeHtml(h.label) + '</span>' +
+        '<span class="row" style="gap:.25rem">' +
+          (isActive
+            ? '<button class="btn btn-ghost btn-sm" data-up="' + escapeHtml(h.id) + '" aria-label="Move up">&uarr;</button>' +
+              '<button class="btn btn-ghost btn-sm" data-rename="' + escapeHtml(h.id) + '">Rename</button>' +
+              '<button class="btn btn-ghost btn-sm" data-off="' + escapeHtml(h.id) + '">Stop</button>'
+            : '<button class="btn btn-ghost btn-sm" data-on="' + escapeHtml(h.id) + '">Track</button>') +
+        '</span>' +
+      '</div>' +
+    '</div>';
+  }
+
+  function paint() {
+    var act = activeHabits();
+    var arch = habits.filter(function (h) { return h.archived; });
+    var a = document.getElementById('h-active');
+    if (a) a.innerHTML = act.map(function (h) { return row(h, true); }).join('');
+    document.getElementById('h-archived').innerHTML = arch.length
+      ? arch.map(function (h) { return row(h, false); }).join('')
+      : '<p class="t-small">Everything you have created is being tracked.</p>';
+
+    document.querySelectorAll('[data-off]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        habits.forEach(function (h) { if (h.id === b.dataset.off) h.archived = true; });
+        saveData(); toast('Stopped tracking'); renderHabitManager();
+      });
+    });
+    document.querySelectorAll('[data-on]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        if (activeHabits().length >= MAX_ACTIVE) { toast('That is enough to track at once — stop one first.'); return; }
+        habits.forEach(function (h) { if (h.id === b.dataset.on) h.archived = false; });
+        saveData(); renderHabitManager();
+      });
+    });
+    document.querySelectorAll('[data-up]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var i = habits.findIndex(function (h) { return h.id === b.dataset.up; });
+        var prev = -1;
+        for (var j = i - 1; j >= 0; j--) { if (!habits[j].archived) { prev = j; break; } }
+        if (i > 0 && prev >= 0) { var tmp = habits[prev]; habits[prev] = habits[i]; habits[i] = tmp; saveData(); renderHabitManager(); }
+      });
+    });
+    document.querySelectorAll('[data-rename]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var h = habits.filter(function (x) { return x.id === b.dataset.rename; })[0];
+        var name = window.prompt('Rename this habit', h.label);
+        if (name === null) return;
+        name = name.trim();
+        if (!name) { toast('A habit needs a name.'); return; }
+        h.label = name.slice(0, 40); saveData(); renderHabitManager();
+      });
+    });
+  }
+  paint();
+
+  function addHabit() {
+    var input = document.getElementById('h-new');
+    var label = input.value.trim();
+    if (!label) return;
+    var id = label.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+    if (!id) { toast('Please use some letters or numbers.'); return; }
+    if (habits.some(function (h) { return h.id === id; })) { toast('You already have that habit.'); return; }
+    if (activeHabits().length >= MAX_ACTIVE) { toast('That is enough to track at once — stop one first.'); return; }
+    habits.push({ id: id, label: label, archived: false, custom: true });
+    saveData(); input.value = ''; renderHabitManager();
+  }
+  document.getElementById('h-add').addEventListener('click', addHabit);
+  document.getElementById('h-new').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') { e.preventDefault(); addHabit(); }
+  });
+}
+
+/* =====================================================================
+   EXPORT / IMPORT
+   ===================================================================== */
+function exportData() {
+  try {
+    var payload = { app: 'Sustain', version: 2, exportedAt: new Date().toISOString(),
+      username: session.username, habits: habits, records: sortedRecords(), insights: insights, settings: settings };
+    var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = 'sustain-' + today() + '.json';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    settings.lastExportAt = new Date().toISOString();
+    saveData();
+    toast('Exported');
+  } catch (err) {
+    showError('Your data could not be exported on this device.');
+  }
+}
+
+function openImport() {
+  root().innerHTML =
+    '<section class="stack-lg">' +
+      '<button class="btn btn-ghost" id="i-back" style="margin-left:-.75rem">&larr; Settings</button>' +
+      '<div><h1>Import</h1>' +
+      '<p class="t-lead" style="margin-top:.5rem">Bring a journal over from another device. Nothing you already have is overwritten.</p></div>' +
+      '<input type="file" id="i-file" accept="application/json,.json">' +
+      '<div id="i-preview"></div>' +
+    '</section>';
+  document.getElementById('i-back').addEventListener('click', function () { render(); });
+  document.getElementById('i-file').addEventListener('change', function () {
+    var f = this.files && this.files[0];
+    if (!f) return;
+    var reader = new FileReader();
+    reader.onerror = function () {
+      document.getElementById('i-preview').innerHTML = '<div class="banner banner-error">That file could not be read.</div>';
+    };
+    reader.onload = function () {
+      var payload;
+      try { payload = JSON.parse(String(reader.result)); }
+      catch (err) {
+        document.getElementById('i-preview').innerHTML = '<div class="banner banner-error">That is not a valid Sustain export.</div>';
+        return;
+      }
+      if (!payload || !Array.isArray(payload.records)) {
+        document.getElementById('i-preview').innerHTML = '<div class="banner banner-error">That file has no nights in it.</div>';
+        return;
+      }
+      previewImport(payload);
+    };
+    reader.readAsText(f);
+  });
+}
+
+function previewImport(payload) {
+  var plan = { add: 0, fill: 0, same: 0 };
+  payload.records.forEach(function (r) {
+    if (!r || !r.date) return;
+    var mine = getRecord(r.date);
+    if (!mine) return plan.add++;
+    if ((!mine.evening && r.evening) || (!mine.morning && r.morning)) return plan.fill++;
+    plan.same++;
+  });
+  document.getElementById('i-preview').innerHTML =
+    '<div class="card pad"><p><strong>' + payload.records.length + ' nights in that file.</strong></p>' +
+    '<p class="t-small" style="margin-top:.5rem">' + plan.add + ' new here, ' + plan.fill + ' would complete a half-logged night, ' + plan.same + ' already here and left alone.</p>' +
+    '<button class="btn btn-primary" id="i-go" style="margin-top:1.25rem">Import</button></div>';
+  document.getElementById('i-go').addEventListener('click', function () {
+    var res = applyImport(payload);
+    toast(res.added + ' nights added');
+    go('journal');
+  });
+}
+
+function applyImport(payload) {
+  var out = { added: 0, filled: 0, same: 0 };
+  payload.records.forEach(function (r) {
+    if (!r || typeof r.date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(r.date)) return;
+    var mine = getRecord(r.date);
+    if (!mine) { mine = { date: r.date, evening: null, morning: null, complete: false }; records.push(mine); out.added++; }
+    else if ((!mine.evening && r.evening) || (!mine.morning && r.morning)) out.filled++;
+    else { out.same++; return; }
+    if (!mine.evening && r.evening) {
+      mine.evening = {
+        tags: Array.isArray(r.evening.tags) ? r.evening.tags.map(String) : [],
+        note: String(r.evening.note || '').slice(0, 400),
+        loggedAt: r.evening.loggedAt || new Date().toISOString()
+      };
+    }
+    if (!mine.morning && r.morning) {
+      mine.morning = {
+        sleepQuality: Math.min(10, Math.max(1, Math.round(Number(r.morning.sleepQuality)) || 1)),
+        restedness: Math.min(10, Math.max(1, Math.round(Number(r.morning.restedness)) || 1)),
+        wokeDuringNight: !!r.morning.wokeDuringNight,
+        loggedAt: r.morning.loggedAt || new Date().toISOString(),
+        lateEntry: !!r.morning.lateEntry
+      };
+    }
+    mine.complete = !!(mine.evening && mine.morning);
+  });
+  (payload.habits || []).forEach(function (h) {
+    if (!h || !h.id || habits.some(function (x) { return x.id === h.id; })) return;
+    habits.push({ id: String(h.id), label: String(h.label || h.id), archived: !!h.archived, custom: true });
+  });
+  (payload.insights || []).forEach(function (i) {
+    if (!i || !i.id || insights.some(function (x) { return x.id === i.id; })) return;
+    insights.push(i);
+  });
+  saveData();
+  return out;
+}
+
+/* =====================================================================
+   BOOT
+   ===================================================================== */
 (function boot() {
   var savedId = readJSON(K_SESSION, null);
   if (savedId) {
     var user = getUsers().filter(function (u) { return u.id === savedId; })[0];
     if (user) return startSession(user);
   }
-  document.getElementById('username').focus();
+  document.getElementById('landing').hidden = false;
 })();
 </script>
 
 <script>
-  /* Offline support is a bonus, never a requirement: if registration fails
-     the app carries on exactly as before. */
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () {
       navigator.serviceWorker.register('/sw.js').catch(function () {});
     });
   }
 </script>
+
 </body>
 </html>
