@@ -167,14 +167,6 @@
   .btn-ghost:hover { color: var(--ink); background: var(--surface-2); }
   .btn-danger { color: var(--danger); }
   .btn-sm { min-height: 40px; padding: 0 var(--s3); font-size: .88rem; }
-  /* Fingers need more than a cursor does. */
-  @media (max-width: 719px) {
-    .btn-sm, .btn-ghost { min-height: 44px; }
-    /* Reclaim horizontal room so a calendar cell stays thumb-sized. */
-    .cal-card { padding: var(--s3); }
-    .cal-grid { gap: 3px; }
-    .cal-day { min-height: 44px; }
-  }
 
   input[type="text"], input[type="password"], input[type="date"], input[type="time"], input[type="search"], textarea, select {
     width: 100%;
@@ -394,6 +386,16 @@
 
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+  }
+
+  /* ---------- mobile refinements ----------
+     Last in the stylesheet on purpose: these override base rules of equal
+     specificity, so source order is what decides the winner. */
+  @media (max-width: 719px) {
+    .btn-sm, .btn-ghost { min-height: 44px; }
+    .cal-card { padding: var(--s3); }
+    .cal-grid { gap: 3px; }
+    .cal-day { min-height: 44px; aspect-ratio: auto; }
   }
 </style>
 </head>
