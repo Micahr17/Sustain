@@ -168,7 +168,13 @@
   .btn-danger { color: var(--danger); }
   .btn-sm { min-height: 40px; padding: 0 var(--s3); font-size: .88rem; }
   /* Fingers need more than a cursor does. */
-  @media (max-width: 719px) { .btn-sm, .btn-ghost { min-height: 44px; } }
+  @media (max-width: 719px) {
+    .btn-sm, .btn-ghost { min-height: 44px; }
+    /* Reclaim horizontal room so a calendar cell stays thumb-sized. */
+    .cal-card { padding: var(--s3); }
+    .cal-grid { gap: 3px; }
+    .cal-day { min-height: 44px; }
+  }
 
   input[type="text"], input[type="password"], input[type="date"], input[type="time"], input[type="search"], textarea, select {
     width: 100%;
@@ -1228,7 +1234,7 @@ function lastLoggedGap() {
 
 function consistencyCard(recent) {
   var pct = Math.round((recent.done / recent.window) * 100);
-  return '<div class="card pad">' +
+  return '<div class="card pad cal-card">' +
     '<div class="row-between">' +
       '<div><p class="t-eyebrow">Consistency</p>' +
       '<p style="margin-top:.4rem"><strong class="t-num">' + recent.done + ' of the last ' + recent.window + ' days</strong> logged.</p></div>' +
