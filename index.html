@@ -343,6 +343,13 @@
   .banner-info { background: var(--surface-2); color: var(--ink-2); }
   [hidden] { display: none !important; }
 
+  .skip-link {
+    position: absolute; left: -9999px; top: 0; z-index: 100;
+    padding: var(--s3) var(--s4); background: var(--surface); color: var(--ink);
+    border: 1px solid var(--line-2); border-radius: var(--r-sm);
+  }
+  .skip-link:focus { left: var(--s4); top: var(--s3); }
+
   .empty { text-align: center; padding: var(--s7) var(--s4); }
   .empty h3 { margin-bottom: var(--s2); }
 
@@ -433,6 +440,7 @@
 </div>
 
 <!-- ===================== APP ===================== -->
+<a href="#view" class="skip-link">Skip to content</a>
 <div id="app" hidden>
   <header class="topbar">
     <div class="topbar-inner">
@@ -451,7 +459,7 @@
     </div>
   </header>
 
-  <main>
+  <main id="view-main">
     <div class="shell">
       <div class="banner banner-error" id="app-error" hidden role="alert" style="margin-bottom:1rem"></div>
       <div id="view"></div>
@@ -641,7 +649,23 @@ var STARTER_HABITS = [
 var DEFAULT_ACTIVE = ['trained', 'outside', 'read', 'caffeine_late', 'screens_before_bed'];
 var MAX_ACTIVE = 8;
 
-var DEFAULT_SETTINGS = { onboarded: false, goals: [] };
+var DEFAULT_SETTINGS = {
+  onboarded: false,
+  goals: [],
+  remindEvening: '21:00',
+  remindMorning: '07:30',
+  notifications: false,
+  lastExportAt: null
+};
+
+var GOALS = [
+  { id: 'energy', label: 'Energy' },
+  { id: 'sleep', label: 'Sleep' },
+  { id: 'fitness', label: 'Fitness' },
+  { id: 'focus', label: 'Focus' },
+  { id: 'consistency', label: 'Consistency' },
+  { id: 'wellbeing', label: 'Overall wellbeing' }
+];
 
 var session = null, records = [], habits = [], insights = [], settings = null;
 var view = 'today', pending = null, toastTimer = null;
@@ -815,7 +839,238 @@ function startSession(user) {
   document.getElementById('app').hidden = false;
   clearError();
   if (!cryptoOK) showError('This browser has no Web Crypto, so passwords are hashed only weakly here.');
+  scheduleReminders();
+  if (!settings.onboarded) { view = 'onboarding'; onboardStep = 0; return render(); }
   go('today');
+}
+
+/* =====================================================================
+   ONBOARDING
+   Four short screens, skippable, shown once. The aim is that someone
+   understands what Sustain does before being asked to do any work.
+   ===================================================================== */
+var onboardStep = 0, onboardGoals = [], onboardHabits = DEFAULT_ACTIVE.slice();
+
+function finishOnboarding() {
+  settings.onboarded = true;
+  settings.goals = onboardGoals.slice();
+  habits.forEach(function (h) { h.archived = onboardHabits.indexOf(h.id) < 0; });
+  onboardHabits.forEach(function (id) {
+    if (!habits.some(function (h) { return h.id === id; })) habits.push({ id: id, label: id.replace(/_/g, ' '), archived: false, custom: true });
+  });
+  saveData();
+  go('today');
+}
+
+function renderOnboarding() {
+  var steps = [step0, step1, step2, step3];
+  document.getElementById('view').innerHTML = steps[onboardStep]();
+  wireOnboarding();
+  var h = document.querySelector('#view h1, #view h2');
+  if (h) { h.setAttribute('tabindex', '-1'); h.focus({ preventScroll: true }); }
+}
+
+function dots() {
+  return '<div class="row" style="gap:.4rem;justify-content:center;margin-top:2rem" aria-hidden="true">' +
+    [0, 1, 2, 3].map(function (i) {
+      return '<span style="width:6px;height:6px;border-radius:50%;background:' +
+        (i === onboardStep ? 'var(--accent)' : 'var(--line-2)') + '"></span>';
+    }).join('') + '</div>';
+}
+
+function step0() {
+  return '<section class="stack-lg" style="padding-top:2rem">' +
+    '<div>' +
+      '<h1>Welcome to Sustain.</h1>' +
+      '<p class="t-lead" style="margin-top:.75rem">Understand what makes you feel your best.</p>' +
+    '</div>' +
+    '<ul class="value-list">' +
+      '<li><span class="n">01</span><span>Track the habits that shape your evening.</span></li>' +
+      '<li><span class="n">02</span><span>Log your energy the next morning.</span></li>' +
+      '<li><span class="n">03</span><span>Discover the patterns in your own data.</span></li>' +
+    '</ul>' +
+    '<button class="btn btn-primary" data-ob="next">Get started</button>' +
+    '<button class="btn btn-ghost btn-sm" data-ob="skip" style="width:100%">Skip for now</button>' +
+    dots() +
+  '</section>';
+}
+
+function step1() {
+  return '<section class="stack-lg" style="padding-top:2rem">' +
+    '<div>' +
+      '<h1>What are you hoping to improve?</h1>' +
+      '<p class="t-lead" style="margin-top:.6rem">Pick any that apply. This only shapes the language Sustain uses — nothing is locked in.</p>' +
+    '</div>' +
+    '<div class="row" style="flex-wrap:wrap;gap:.5rem">' +
+      GOALS.map(function (g) {
+        var on = onboardGoals.indexOf(g.id) >= 0;
+        return '<button class="btn btn-sm ' + (on ? 'btn-primary' : 'btn-secondary') + '" data-goal="' + g.id +
+          '" aria-pressed="' + on + '" style="width:auto">' + g.label + '</button>';
+      }).join('') +
+    '</div>' +
+    '<button class="btn btn-primary" data-ob="next">Continue</button>' +
+    '<button class="btn btn-ghost btn-sm" data-ob="back" style="width:100%">Back</button>' +
+    dots() +
+  '</section>';
+}
+
+function step2() {
+  return '<section class="stack-lg" style="padding-top:2rem">' +
+    '<div>' +
+      '<h1>Choose your habits.</h1>' +
+      '<p class="t-lead" style="margin-top:.6rem">Five or so is plenty. A short list logged honestly tells you far more than a long one.</p>' +
+    '</div>' +
+    '<div>' +
+      '<div class="row-between section-head"><span class="t-eyebrow">Tracking</span>' +
+      '<span class="t-fine t-num" id="ob-count">' + onboardHabits.length + ' of ' + MAX_ACTIVE + '</span></div>' +
+      '<div id="ob-habits"></div>' +
+    '</div>' +
+    '<div>' +
+      '<label class="t-eyebrow" for="ob-new" style="display:block;margin-bottom:.6rem">Add your own</label>' +
+      '<div class="row"><input type="text" id="ob-new" maxlength="40" placeholder="e.g. Walk after dinner">' +
+      '<button class="btn btn-secondary btn-sm" id="ob-add" style="flex:none">Add</button></div>' +
+    '</div>' +
+    '<button class="btn btn-primary" data-ob="next">Continue</button>' +
+    '<button class="btn btn-ghost btn-sm" data-ob="back" style="width:100%">Back</button>' +
+    dots() +
+  '</section>';
+}
+
+function step3() {
+  return '<section class="stack-lg" style="padding-top:2rem">' +
+    '<div>' +
+      '<h1>You are ready.</h1>' +
+      '<p class="t-lead" style="margin-top:.75rem">Two small moments a day. After 5pm, tell Sustain what your day looked like. In the morning, rate your energy — and that pair becomes one night in your journal.</p>' +
+    '</div>' +
+    '<div class="card pad">' +
+      '<p class="t-small">Sustain learns from those check-ins. After about a week it can start looking for patterns, and it will say plainly when there is not enough to go on yet.</p>' +
+    '</div>' +
+    '<button class="btn btn-primary" data-ob="done">Go to Today</button>' +
+    '<p class="t-fine" style="text-align:center">Build a life you can sustain.</p>' +
+    dots() +
+  '</section>';
+}
+
+function wireOnboarding() {
+  document.querySelectorAll('[data-ob]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var a = b.dataset.ob;
+      if (a === 'skip' || a === 'done') return finishOnboarding();
+      if (a === 'back') { onboardStep = Math.max(0, onboardStep - 1); return renderOnboarding(); }
+      onboardStep = Math.min(3, onboardStep + 1);
+      renderOnboarding();
+    });
+  });
+  document.querySelectorAll('[data-goal]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var i = onboardGoals.indexOf(b.dataset.goal);
+      if (i >= 0) onboardGoals.splice(i, 1); else onboardGoals.push(b.dataset.goal);
+      renderOnboarding();
+    });
+  });
+
+  var list = document.getElementById('ob-habits');
+  if (list) {
+    var paint = function () {
+      list.innerHTML = habits.map(function (h) {
+        var on = onboardHabits.indexOf(h.id) >= 0;
+        return '<button type="button" class="habit" data-obh="' + escapeHtml(h.id) + '" aria-pressed="' + on + '">' +
+          '<span class="box" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="var(--accent-ink)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.2 3.2L13 5"/></svg></span>' +
+          '<span class="label">' + escapeHtml(h.label) + '</span></button>';
+      }).join('');
+      document.getElementById('ob-count').textContent = onboardHabits.length + ' of ' + MAX_ACTIVE;
+      list.querySelectorAll('[data-obh]').forEach(function (b) {
+        b.addEventListener('click', function () {
+          var id = b.dataset.obh, i = onboardHabits.indexOf(id);
+          if (i >= 0) onboardHabits.splice(i, 1);
+          else if (onboardHabits.length >= MAX_ACTIVE) { toast('That is enough to start with.'); return; }
+          else onboardHabits.push(id);
+          paint();
+        });
+      });
+    };
+    paint();
+
+    var add = function () {
+      var input = document.getElementById('ob-new');
+      var label = input.value.trim();
+      if (!label) return;
+      var id = label.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+      if (!id) { toast('Please use some letters or numbers.'); return; }
+      if (habits.some(function (h) { return h.id === id; })) { toast('You already have that habit.'); return; }
+      if (onboardHabits.length >= MAX_ACTIVE) { toast('That is enough to start with.'); return; }
+      habits.push({ id: id, label: label, archived: false, custom: true });
+      onboardHabits.push(id);
+      input.value = '';
+      paint();
+    };
+    document.getElementById('ob-add').addEventListener('click', add);
+    document.getElementById('ob-new').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); add(); }
+    });
+  }
+}
+
+/* =====================================================================
+   REMINDERS
+
+   Two mechanisms, and the honest one leads. A calendar file creates two
+   repeating events that fire whether or not Sustain is open, with no
+   server and no push infrastructure. Browser notifications only fire
+   while the page is actually open, so they are offered second and
+   labelled as such. True push would need a service and a subscription
+   store; the settings and scheduling live here so that can drop in later
+   without changing the interface.
+   ===================================================================== */
+var reminderTimers = [];
+
+function scheduleReminders() {
+  reminderTimers.forEach(clearTimeout);
+  reminderTimers = [];
+  if (!session || !settings || !settings.notifications) return;
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+
+  [[settings.remindEvening, 'Evening check-in', 'What did today look like?'],
+   [settings.remindMorning, 'Morning check-in', 'How is your energy?']].forEach(function (r) {
+    var parts = String(r[0] || '').split(':');
+    if (parts.length !== 2) return;
+    var when = new Date();
+    when.setHours(Number(parts[0]), Number(parts[1]), 0, 0);
+    if (when <= new Date()) when.setDate(when.getDate() + 1);
+    var ms = when - new Date();
+    if (ms > 2147483647) return;
+    reminderTimers.push(setTimeout(function () {
+      try { new Notification('Sustain — ' + r[1], { body: r[2], icon: '/icon.png', tag: r[1] }); } catch (err) {}
+      scheduleReminders();
+    }, ms));
+  });
+}
+
+function downloadReminders() {
+  try {
+    var stamp = new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+    var day = today().replace(/-/g, '');
+    function ev(uid, time, title, body) {
+      return ['BEGIN:VEVENT', 'UID:' + uid + '@sustain.local', 'DTSTAMP:' + stamp,
+        'DTSTART:' + day + 'T' + time.replace(':', '') + '00', 'DURATION:PT5M', 'RRULE:FREQ=DAILY',
+        'SUMMARY:' + title, 'DESCRIPTION:' + body,
+        'BEGIN:VALARM', 'TRIGGER:PT0M', 'ACTION:DISPLAY', 'DESCRIPTION:' + title, 'END:VALARM',
+        'END:VEVENT'].join('\r\n');
+    }
+    var ics = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Sustain//Reminders//EN', 'CALSCALE:GREGORIAN',
+      ev('sustain-evening', settings.remindEvening, 'Sustain - evening check-in', 'What did today look like?'),
+      ev('sustain-morning', settings.remindMorning, 'Sustain - morning check-in', 'How is your energy?'),
+      'END:VCALENDAR'].join('\r\n');
+    var blob = new Blob([ics], { type: 'text/calendar' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = 'sustain-reminders.ics';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    toast('Calendar file downloaded');
+  } catch (err) {
+    showError('That calendar file could not be created on this device.');
+  }
 }
 
 function signOut() {
@@ -845,6 +1100,10 @@ function go(next) {
   });
   window.scrollTo(0, 0);
   render();
+  // Move focus to the new heading so screen readers and keyboard users
+  // land where the eye lands, instead of staying on the tab they pressed.
+  var h = document.querySelector('#view h1, #view h2');
+  if (h) { h.setAttribute('tabindex', '-1'); h.focus({ preventScroll: true }); }
 }
 
 var root = function () { return document.getElementById('view'); };
@@ -854,6 +1113,7 @@ function render() {
   if (view === 'journal') return renderJournal();
   if (view === 'insights') return renderInsights();
   if (view === 'settings') return renderSettings();
+  if (view === 'onboarding') return renderOnboarding();
 }
 
 /* =====================================================================
@@ -1198,6 +1458,7 @@ function renderJournal() {
   root().innerHTML =
     '<section class="stack-lg">' +
       '<div class="row-between"><h1>Journal</h1><span class="t-fine t-num">' + all.length + (all.length === 1 ? ' night' : ' nights') + '</span></div>' +
+      backupNudge() +
       calendarHtml() +
       '<div>' +
         '<label class="t-eyebrow" for="j-search" style="display:block;margin-bottom:.6rem">Search your notes</label>' +
@@ -1207,6 +1468,8 @@ function renderJournal() {
     '</section>';
 
   bindCalendar();
+  var nudge = document.getElementById('nudge-export');
+  if (nudge) nudge.addEventListener('click', exportData);
   var input = document.getElementById('j-search');
   input.addEventListener('input', function () { paintList(input.value.trim().toLowerCase()); });
   paintList('');
@@ -1253,6 +1516,20 @@ function entryCard(r) {
   '</button>';
 }
 
+
+/* A quiet reminder that this journal has exactly one copy. Never a modal,
+   never guilt: a line in the journal after enough has accumulated to be
+   worth losing. */
+function backupNudge() {
+  if (records.length < 14) return '';
+  var last = settings.lastExportAt ? (Date.now() - new Date(settings.lastExportAt).getTime()) / 86400000 : null;
+  if (last !== null && last < 30) return '';
+  return '<div class="banner banner-info">' +
+    '<strong>' + records.length + ' nights live only in this browser.</strong> ' +
+    (last === null ? 'You have never exported a backup.' : 'Your last backup was ' + Math.round(last) + ' days ago.') +
+    ' <button class="btn btn-ghost btn-sm" id="nudge-export" style="padding:0;text-decoration:underline">Export now</button>' +
+  '</div>';
+}
 function calendarHtml() {
   var y = calMonth.getFullYear(), m = calMonth.getMonth();
   var first = new Date(y, m, 1), lastDay = new Date(y, m + 1, 0).getDate();
@@ -1858,6 +2135,9 @@ function renderSettings() {
   if (pending && pending.kind === 'habits') return renderHabitManager();
 
   var theme = currentTheme();
+  var notifSupported = 'Notification' in window;
+  var notifPerm = notifSupported ? Notification.permission : 'unsupported';
+  var lastExport = settings.lastExportAt ? new Date(settings.lastExportAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : null;
   root().innerHTML =
     '<section class="stack-lg">' +
       '<h1>Settings</h1>' +
@@ -1885,9 +2165,28 @@ function renderSettings() {
       '</div>' +
 
       '<div class="card pad">' +
+        '<p class="t-eyebrow">Reminders</p>' +
+        '<p class="t-small" style="margin-top:.5rem">Two check-ins a day only works if something nudges you. Choose your times, then add them to your calendar.</p>' +
+        '<div class="row" style="margin-top:1rem;gap:1rem;align-items:flex-end">' +
+          '<div style="flex:1"><label class="t-fine" for="rem-eve">Evening</label>' +
+          '<input type="time" id="rem-eve" value="' + escapeHtml(settings.remindEvening) + '"></div>' +
+          '<div style="flex:1"><label class="t-fine" for="rem-mor">Morning</label>' +
+          '<input type="time" id="rem-mor" value="' + escapeHtml(settings.remindMorning) + '"></div>' +
+        '</div>' +
+        '<button class="btn btn-secondary btn-sm" id="s-cal" style="margin-top:1rem">Add to my calendar</button>' +
+        (notifPerm === 'granted'
+          ? '<p class="t-fine" style="margin-top:.9rem">Browser notifications are on, and fire while Sustain is open.</p>'
+          : notifSupported
+            ? '<button class="btn btn-ghost btn-sm" id="s-notif" style="margin-top:.5rem;width:100%">Also notify me in the browser</button>'
+            : '') +
+        '<p class="t-fine" style="margin-top:.9rem">The calendar file is the dependable one: it repeats daily and works whether or not Sustain is open. Browser notifications only fire while this app is running.</p>' +
+      '</div>' +
+
+      '<div class="card pad">' +
         '<p class="t-eyebrow">Your data</p>' +
         '<p class="t-small" style="margin-top:.5rem">Everything you log stays in this browser. Nothing is uploaded, and there is no account on any server — which also means a cleared cache would take your journal with it. Export regularly.</p>' +
         '<p class="t-small" style="margin-top:.6rem">The one exception: when you press <em>Look for patterns</em>, that week of nights is sent for analysis. Nothing else ever leaves the device.</p>' +
+        '<p class="t-fine" style="margin-top:.7rem">' + (lastExport ? 'Last exported ' + escapeHtml(lastExport) + '.' : 'You have never exported a backup.') + '</p>' +
         '<div class="row" style="margin-top:1.2rem;flex-wrap:wrap">' +
           '<button class="btn btn-secondary btn-sm" id="s-export">Export</button>' +
           '<button class="btn btn-secondary btn-sm" id="s-import">Import</button>' +
@@ -1905,6 +2204,30 @@ function renderSettings() {
 
   document.getElementById('s-signout').addEventListener('click', signOut);
   document.getElementById('s-habits').addEventListener('click', function () { pending = { kind: 'habits' }; render(); });
+  document.getElementById('s-cal').addEventListener('click', downloadReminders);
+  ['rem-eve', 'rem-mor'].forEach(function (id) {
+    document.getElementById(id).addEventListener('change', function () {
+      settings.remindEvening = document.getElementById('rem-eve').value || '21:00';
+      settings.remindMorning = document.getElementById('rem-mor').value || '07:30';
+      saveData();
+      scheduleReminders();
+      toast('Reminder times saved');
+    });
+  });
+  var notifBtn = document.getElementById('s-notif');
+  if (notifBtn) {
+    // Permission is only ever requested from a click: prompting on load
+    // gets blocked by browsers and resented by people.
+    notifBtn.addEventListener('click', function () {
+      Notification.requestPermission().then(function (p) {
+        settings.notifications = p === 'granted';
+        saveData();
+        scheduleReminders();
+        if (p !== 'granted') toast('Your browser blocked notifications.');
+        renderSettings();
+      });
+    });
+  }
   document.getElementById('s-export').addEventListener('click', exportData);
   document.getElementById('s-import').addEventListener('click', openImport);
   document.querySelectorAll('[data-theme-set]').forEach(function (b) {
@@ -2043,6 +2366,8 @@ function exportData() {
     a.href = url; a.download = 'sustain-' + today() + '.json';
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    settings.lastExportAt = new Date().toISOString();
+    saveData();
     toast('Exported');
   } catch (err) {
     showError('Your data could not be exported on this device.');
