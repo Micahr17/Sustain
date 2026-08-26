@@ -634,6 +634,26 @@ function isLate(nightDate, when) {
   d.setHours(12, 0, 0, 0);
   return when > d;
 }
+
+/* Bed and wake times are stored as plain "HH:MM" strings and the duration
+   is derived, never stored twice. A wake time earlier in the day than the
+   bedtime means the night crossed midnight, which is the normal case. */
+function hoursBetween(bed, wake) {
+  if (!bed || !wake) return null;
+  var b = String(bed).split(':'), w = String(wake).split(':');
+  if (b.length !== 2 || w.length !== 2) return null;
+  var bm = Number(b[0]) * 60 + Number(b[1]);
+  var wm = Number(w[0]) * 60 + Number(w[1]);
+  if (!isFinite(bm) || !isFinite(wm)) return null;
+  var diff = wm - bm;
+  if (diff <= 0) diff += 1440;
+  if (diff > 960) return null;            // over 16 hours is a typo, not a night
+  return Math.round((diff / 60) * 10) / 10;
+}
+function recordHours(r) {
+  if (!r || !r.evening || !r.morning) return null;
+  return hoursBetween(r.evening.bedtime, r.morning.wakeTime);
+}
 function daysBetween(a, b) { return Math.round((parseISO(b) - parseISO(a)) / 86400000); }
 
 /* ---------------------------------------------------------------------
@@ -1280,6 +1300,7 @@ function renderEvening(date) {
   var rec = getRecord(date);
   var picked = rec && rec.evening ? rec.evening.tags.slice() : [];
   var note = rec && rec.evening ? rec.evening.note : '';
+  var bedtime = rec && rec.evening ? (rec.evening.bedtime || '') : '';
   var list = activeHabits();
 
   root().innerHTML =
@@ -1298,6 +1319,11 @@ function renderEvening(date) {
         (list.length
           ? '<div id="habit-list"></div>'
           : '<div class="card pad empty"><h3>No habits yet</h3><p class="t-small">Add a few in Settings and they will appear here each evening.</p></div>') +
+      '</div>' +
+
+      '<div>' +
+        '<label class="t-eyebrow" for="bedtime" style="display:block;margin-bottom:.6rem">Heading to bed around</label>' +
+        '<input type="time" id="bedtime" value="' + escapeHtml(bedtime) + '" style="max-width:190px">' +
       '</div>' +
 
       '<div>' +
@@ -1332,7 +1358,12 @@ function renderEvening(date) {
   document.getElementById('save-evening').addEventListener('click', function () {
     var r = getRecord(date);
     if (!r) { r = { date: date, evening: null, morning: null, complete: false }; records.push(r); }
-    r.evening = { tags: picked, note: document.getElementById('note').value.trim(), loggedAt: new Date().toISOString() };
+    r.evening = {
+      tags: picked,
+      note: document.getElementById('note').value.trim(),
+      bedtime: document.getElementById('bedtime').value || null,
+      loggedAt: new Date().toISOString()
+    };
     r.complete = !!(r.evening && r.morning);
     if (!saveData()) return;
     pending = null;
@@ -1349,6 +1380,8 @@ function renderMorning(date) {
   var energy = rec.morning ? rec.morning.restedness : null;
   var quality = rec.morning ? rec.morning.sleepQuality : null;
   var woke = rec.morning ? rec.morning.wokeDuringNight : false;
+  var wake = rec.morning ? (rec.morning.wakeTime || '') : '';
+  var bed = rec.evening.bedtime || '';
 
   root().innerHTML =
     '<section class="stack-lg">' +
@@ -1382,11 +1415,28 @@ function renderMorning(date) {
         '<span class="label">Woke up during the night</span>' +
       '</button>' +
 
+      '<div>' +
+        '<div class="row-between section-head"><h2>Woke up at</h2><span class="t-num" id="hours-val" style="font-weight:600"></span></div>' +
+        '<input type="time" id="wake" value="' + escapeHtml(wake) + '" style="max-width:190px">' +
+        '<p class="t-fine" style="margin-top:.5rem">' +
+          (bed ? 'You noted bed around ' + escapeHtml(bed) + '.' : 'No bedtime was logged for this night, so hours slept stays blank.') +
+        '</p>' +
+      '</div>' +
+
       '<button class="btn btn-primary" id="save-morning">Save morning</button>' +
     '</section>';
 
   bindScale('energy', energy);
   bindScale('quality', quality);
+  // Live hours-slept readout, so a mistyped time is obvious immediately.
+  var wakeEl = document.getElementById('wake');
+  var showHours = function () {
+    var h = hoursBetween(bed, wakeEl.value);
+    document.getElementById('hours-val').textContent = h === null ? (bed ? '—' : '') : h + 'h';
+  };
+  wakeEl.addEventListener('input', showHours);
+  showHours();
+
   var wokeBtn = document.getElementById('woke');
   wokeBtn.addEventListener('click', function () {
     wokeBtn.setAttribute('aria-pressed', wokeBtn.getAttribute('aria-pressed') === 'true' ? 'false' : 'true');
@@ -1401,6 +1451,7 @@ function renderMorning(date) {
       sleepQuality: q,
       restedness: e,                      // stored name kept from v1; shown as "energy"
       wokeDuringNight: wokeBtn.getAttribute('aria-pressed') === 'true',
+      wakeTime: document.getElementById('wake').value || null,
       loggedAt: now.toISOString(),
       lateEntry: isLate(date, now)
     };
@@ -1524,6 +1575,7 @@ function entryCard(r) {
           '<div class="metric"><div class="k">Energy</div><div class="v t-num">' + r.morning.restedness + '<span class="t-fine">/10</span></div></div>' +
           '<div class="metric"><div class="k">Sleep</div><div class="v t-num">' + r.morning.sleepQuality + '<span class="t-fine">/10</span></div></div>' +
           '<div class="metric"><div class="k">Woke</div><div class="v">' + (r.morning.wokeDuringNight ? 'Yes' : 'No') + '</div></div>' +
+          (recordHours(r) !== null ? '<div class="metric"><div class="k">Slept</div><div class="v t-num">' + recordHours(r) + '<span class="t-fine">h</span></div></div>' : '') +
         '</div>'
       : '') +
   '</button>';
@@ -1605,6 +1657,7 @@ function renderDay(date) {
             '<div class="metric"><div class="k">Energy</div><div class="v t-num">' + r.morning.restedness + '<span class="t-fine">/10</span></div></div>' +
             '<div class="metric"><div class="k">Sleep</div><div class="v t-num">' + r.morning.sleepQuality + '<span class="t-fine">/10</span></div></div>' +
             '<div class="metric"><div class="k">Habits</div><div class="v t-num">' + (r.evening ? r.evening.tags.length : 0) + '</div></div>' +
+            (recordHours(r) !== null ? '<div class="metric"><div class="k">Slept</div><div class="v t-num">' + recordHours(r) + '<span class="t-fine">h</span></div></div>' : '') +
           '</div>' +
           (r.morning.lateEntry ? '<p class="t-fine" style="margin-top:.8rem">Rated later from memory.</p>' : '') +
         '</div>'
@@ -1740,7 +1793,7 @@ function renderInsights() {
       rangeSwitcher() +
       (rows.length < 2
         ? '<div class="card pad empty"><h3>Nothing in this window</h3><p class="t-small" style="margin-top:.5rem">You have complete nights, but none inside the last ' + range + ' days. Try a wider range.</p></div>'
-        : energyPanel(rows, prior) + habitPanel(rows) + patternPanel(rows) + weeklyReview()) +
+        : energyPanel(rows, prior) + durationPanel(rows) + habitPanel(rows) + patternPanel(rows) + weeklyReview()) +
       aiPanel(done) +
       '<div id="insight-out"></div>' +
       historyHtml() +
@@ -1823,6 +1876,49 @@ function chartHtml(rows) {
 }
 
 /* ---------- habit consistency ---------- */
+
+/* ---------- sleep duration ----------
+   Duration is checked before any habit, because it explains energy more
+   often than a habit does. If the low-energy nights are simply the short
+   ones, saying so is the honest finding. */
+function durationPanel(rows) {
+  var timed = rows.filter(function (r) { return recordHours(r) !== null; });
+  if (timed.length < 3) {
+    if (!rows.length) return '';
+    return '<div class="card pad">' +
+      '<p class="t-eyebrow">Sleep length</p>' +
+      '<p class="t-small" style="margin-top:.5rem">Add a bedtime in the evening and a wake time in the morning, and Sustain can weigh how long you slept against how you felt.</p>' +
+      '<p class="t-fine" style="margin-top:.5rem">' + timed.length + ' of ' + rows.length + ' nights in this window have both times.</p>' +
+    '</div>';
+  }
+
+  var hrs = timed.map(recordHours);
+  var avg = mean(hrs);
+  var long = timed.filter(function (r) { return recordHours(r) >= avg; });
+  var short = timed.filter(function (r) { return recordHours(r) < avg; });
+
+  var line = '';
+  if (long.length >= 3 && short.length >= 3) {
+    var gap = mean(energyOf(long)) - mean(energyOf(short));
+    line = Math.abs(gap) < requiredGap(timed.length)
+      ? '<p class="t-small" style="margin-top:1rem">Longer and shorter nights have produced much the same energy so far, so sleep length is not the thing moving your numbers in this window.</p>'
+      : '<p class="t-small" style="margin-top:1rem">Your longer nights averaged <strong class="t-num">' + mean(energyOf(long)).toFixed(1) +
+        '</strong> energy against <strong class="t-num">' + mean(energyOf(short)).toFixed(1) + '</strong> on shorter ones — a gap of <span class="t-num">' +
+        Math.abs(gap).toFixed(1) + '</span> points across ' + long.length + ' and ' + short.length + ' nights.</p>';
+  }
+
+  return '<div class="card pad">' +
+    '<p class="t-eyebrow">Sleep length</p>' +
+    '<div class="metric-row" style="margin-top:.8rem">' +
+      '<div class="metric"><div class="k">Average</div><div class="v t-num">' + avg.toFixed(1) + '<span class="t-fine">h</span></div></div>' +
+      '<div class="metric"><div class="k">Longest</div><div class="v t-num">' + Math.max.apply(null, hrs) + '<span class="t-fine">h</span></div></div>' +
+      '<div class="metric"><div class="k">Shortest</div><div class="v t-num">' + Math.min.apply(null, hrs) + '<span class="t-fine">h</span></div></div>' +
+    '</div>' + line +
+    (timed.length < rows.length
+      ? '<p class="t-fine" style="margin-top:.9rem">Based on the ' + timed.length + ' of ' + rows.length + ' nights that have both times.</p>'
+      : '') +
+  '</div>';
+}
 function habitPanel(rows) {
   var logged = sortedRecords().filter(function (r) {
     if (!r.evening) return false;
@@ -2044,6 +2140,7 @@ function buildPayload(useRandom) {
       sleepQuality: r.morning.sleepQuality,
       restedness: r.morning.restedness,
       wokeDuringNight: r.morning.wokeDuringNight,
+      hoursSlept: recordHours(r),
       lateEntry: !!r.morning.lateEntry
     };
   });

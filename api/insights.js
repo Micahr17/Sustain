@@ -39,9 +39,10 @@ var SYSTEM_PROMPT = [
   '   - 21+ nights: "high" is available, and needs 7+ nights each side and a gap of 2.0+.',
   '4. Check for overlap before claiming anything. If the individual restedness values of the two groups interleave — the worst night without the behaviour is worse than the best night with it — the means are being pulled by one or two outliers and this is not a pattern. Say nothing.',
   '5. Check for confounding. If two or more tags appear on nearly the same nights, their effects cannot be separated. Report at most one of them, and state in the evidence that it cannot be distinguished from the tags it travels with. Never report several tags that are really the same handful of nights described differently.',
-  '6. Every claim must cite concrete evidence from the data: the two group means, the number of nights in each group, or specific dates. Never write evidence that cannot be checked against the records provided.',
-  '7. Records with lateEntry set to true were rated from memory hours or days afterwards. Treat them as weaker evidence, and say so if a pattern leans on them.',
-  '8. Report at most 3 patterns. Fewer is normal. Zero is a correct answer.',
+  '6. Check sleep duration before any habit. hoursSlept is how long the person actually slept, and it explains restedness more often than any habit does. If the low-restedness nights are also the short nights, the honest finding is about time asleep, not about whichever tag happens to sit on those nights. Only attribute an effect to a habit once you are satisfied hoursSlept is not doing the work, and say so when it is. hoursSlept is null on nights with no times logged: ignore those for duration comparisons rather than treating null as zero.',
+  '7. Every claim must cite concrete evidence from the data: the two group means, the number of nights in each group, or specific dates. Never write evidence that cannot be checked against the records provided.',
+  '8. Records with lateEntry set to true were rated from memory hours or days afterwards. Treat them as weaker evidence, and say so if a pattern leans on them.',
+  '9. Report at most 3 patterns. Fewer is normal. Zero is a correct answer.',
   '',
   'A single week is a small sample. With fewer than 10 nights, report a pattern only if it is overwhelming: a gap of 4.0 or more, groups that do not overlap at all, and no other tag tracking the same nights. Anything less than overwhelming is chance, and an empty result is the expected outcome rather than a disappointing one.',
   '',
@@ -91,6 +92,15 @@ function throttled(ip) {
   return list.length > limit;
 }
 
+/* null is meaningful: it means the night has no bed or wake time, not
+   that the person slept zero hours. */
+function clampHours(v) {
+  if (v === null || v === undefined || v === '') return null;
+  var n = Number(v);
+  if (!isFinite(n) || n <= 0 || n > 16) return null;
+  return Math.round(n * 10) / 10;
+}
+
 function clampScore(v) {
   var n = Math.round(Number(v));
   if (!isFinite(n)) return 0;
@@ -136,6 +146,7 @@ module.exports = async function handler(req, res) {
       sleepQuality: clampScore(n && n.sleepQuality),
       restedness: clampScore(n && n.restedness),
       wokeDuringNight: !!(n && n.wokeDuringNight),
+      hoursSlept: clampHours(n && n.hoursSlept),
       lateEntry: !!(n && n.lateEntry)
     };
   });
